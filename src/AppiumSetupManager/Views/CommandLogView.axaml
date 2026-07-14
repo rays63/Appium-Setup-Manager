@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:models="using:AppiumSetupManager.Core.Models"
+             xmlns:converters="using:AppiumSetupManager.Converters"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.CommandLogView"
+             x:DataType="vm:CommandLogViewModel">
+
+    <UserControl.Resources>
+        <converters:LogEntryKindToBrushConverter x:Key="LogEntryKindToBrushConverter" />
+        <converters:BoolToExpandCollapseConverter x:Key="BoolToExpandCollapseConverter" />
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- Header row -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <TextBlock Grid.Column="0"
+                           Text="{x:Static strings:Strings.CommandLogTitle}"
+                           VerticalAlignment="Center"
+                           Margin="8,4" />
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Margin="4,2">
+
+                    <Button Content="{Binding IsCollapsed, Converter={StaticResource BoolToExpandCollapseConverter}}"
+                            Command="{Binding ToggleCollapseCommand}"
+                            AutomationProperties.Name="Toggle command log"
+                            Padding="8,4"
+                            Margin="2,0" />
+
+                    <Button Content="{x:Static strings:Strings.CommandLogExport}"
+                            Command="{Binding ExportLogCommand}"
+                            AutomationProperties.Name="Export log"
+                            Padding="8,4"
+                            Margin="2,0" />
+
+                </StackPanel>
+
+            </Grid>
+        </Border>
+
+        <!-- Log output -->
+        <ScrollViewer x:Name="LogScrollViewer"
+                      IsVisible="{Binding !IsCollapsed}"
+                      MaxHeight="250"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Entries}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:LogEntry">
+                        <TextBlock Text="{Binding Text}"
+                                   Foreground="{Binding Kind, Converter={StaticResource LogEntryKindToBrushConverter}}"
+                                   FontFamily="Courier New,Courier,monospace"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="4,1" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </DockPanel>
+
+</UserControl>

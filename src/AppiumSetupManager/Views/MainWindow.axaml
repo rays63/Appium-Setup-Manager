@@ -1,0 +1,88 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AppiumSetupManager.ViewModels"
+        xmlns:views="using:AppiumSetupManager.Views"
+        xmlns:strings="using:AppiumSetupManager.Localization"
+        x:Class="AppiumSetupManager.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{x:Static strings:Strings.AppTitle}"
+        Width="1024" Height="700"
+        MinWidth="800" MinHeight="560">
+
+    <DockPanel LastChildFill="True">
+
+        <!-- Left navigation panel -->
+        <Border DockPanel.Dock="Left"
+                Width="200"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,1,0">
+            <StackPanel Margin="8,16,8,8">
+
+                <TextBlock Text="{x:Static strings:Strings.AppTitle}"
+                           FontWeight="SemiBold"
+                           FontSize="14"
+                           TextWrapping="Wrap"
+                           Margin="8,0,8,12" />
+
+                <Separator Margin="0,0,0,8" />
+
+                <RadioButton x:Name="NavDashboardButton"
+                             GroupName="Nav"
+                             Content="{x:Static strings:Strings.NavDashboard}"
+                             IsChecked="True"
+                             Command="{Binding NavigateToDashboardCommand}"
+                             HorizontalAlignment="Stretch"
+                             Padding="8,6"
+                             Margin="0,2"
+                             AutomationProperties.Name="Navigate to Dashboard" />
+
+                <RadioButton x:Name="NavInstallButton"
+                             GroupName="Nav"
+                             Content="{x:Static strings:Strings.NavInstall}"
+                             Command="{Binding NavigateToInstallCommand}"
+                             HorizontalAlignment="Stretch"
+                             Padding="8,6"
+                             Margin="0,2"
+                             AutomationProperties.Name="Navigate to Install" />
+
+                <RadioButton x:Name="NavDoctorButton"
+                             GroupName="Nav"
+                             Content="{x:Static strings:Strings.NavDoctor}"
+                             Command="{Binding NavigateToDoctorCommand}"
+                             HorizontalAlignment="Stretch"
+                             Padding="8,6"
+                             Margin="0,2"
+                             AutomationProperties.Name="Navigate to Doctor" />
+
+                <RadioButton x:Name="NavStorageButton"
+                             GroupName="Nav"
+                             Content="{x:Static strings:Strings.NavStorage}"
+                             Command="{Binding NavigateToStorageCommand}"
+                             HorizontalAlignment="Stretch"
+                             Padding="8,6"
+                             Margin="0,2"
+                             AutomationProperties.Name="Navigate to Storage" />
+
+            </StackPanel>
+        </Border>
+
+        <!-- Main content area -->
+        <Grid RowDefinitions="*,Auto">
+
+            <!-- Content region — ViewLocator resolves the correct view -->
+            <ContentControl Grid.Row="0"
+                            Content="{Binding CurrentView}" />
+
+            <!-- Command log panel -->
+            <Border Grid.Row="1"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="0,1,0,0">
+                <views:CommandLogView DataContext="{Binding CommandLog}" />
+            </Border>
+
+        </Grid>
+
+    </DockPanel>
+
+</Window>

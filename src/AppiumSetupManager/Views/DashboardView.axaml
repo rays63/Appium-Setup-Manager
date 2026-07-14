@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <TextBlock Text="{x:Static strings:Strings.DashboardPlaceholder}"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center" />
+
+</UserControl>

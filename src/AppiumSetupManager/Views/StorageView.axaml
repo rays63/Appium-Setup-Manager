@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.StorageView"
+             x:DataType="vm:StorageViewModel">
+
+    <TextBlock Text="{x:Static strings:Strings.StoragePlaceholder}"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center" />
+
+</UserControl>
