@@ -6,8 +6,8 @@ namespace AppiumSetupManager.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    private readonly DashboardViewModel _dashboard = new();
-    private readonly InstallViewModel   _install   = new();
+    private readonly DashboardViewModel _dashboard;
+    private readonly InstallViewModel   _install;
     private readonly DoctorViewModel    _doctor    = new();
     private readonly StorageViewModel   _storage   = new();
 
@@ -19,8 +19,10 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _activeNav = "Dashboard";
 
-    public MainWindowViewModel(ILogService logService)
+    public MainWindowViewModel(ILogService logService, IDetectionService detectionService, InstallViewModel installViewModel)
     {
+        _dashboard   = new DashboardViewModel(detectionService);
+        _install     = installViewModel;
         CommandLog   = new CommandLogViewModel(logService);
         _currentView = _dashboard;
     }

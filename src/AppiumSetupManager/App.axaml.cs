@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using AppiumSetupManager.Core.Infrastructure;
 using AppiumSetupManager.Core.Platform;
 using AppiumSetupManager.Core.Services;
 using AppiumSetupManager.ViewModels;
@@ -18,13 +19,19 @@ public partial class App : Application
         {
             var platform   = PlatformAdapterFactory.Create();
             var logService = new LogService(platform);
-            var mainVm     = new MainWindowViewModel(logService);
+            var runner     = new CommandRunner(logService);
+            var envManager = new EnvironmentVariableManager(platform);
+            var detection  = new DetectionService(runner, platform);
+            var installer  = new InstallerService(runner, platform, envManager, detection);
+            var installVm  = new InstallViewModel(installer);
+            var mainVm     = new MainWindowViewModel(logService, detection, installVm);
 
             desktop.MainWindow = new MainWindow { DataContext = mainVm };
 
             desktop.ShutdownRequested += (_, _) =>
             {
                 mainVm.CommandLog.Shutdown();
+                installVm.Dispose();
                 logService.Dispose();
             };
         }

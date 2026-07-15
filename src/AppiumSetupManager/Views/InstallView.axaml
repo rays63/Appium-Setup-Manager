@@ -1,12 +1,132 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:converters="using:AppiumSetupManager.Converters"
              xmlns:strings="using:AppiumSetupManager.Localization"
              x:Class="AppiumSetupManager.Views.InstallView"
              x:DataType="vm:InstallViewModel">
 
-    <TextBlock Text="{x:Static strings:Strings.InstallPlaceholder}"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <UserControl.Resources>
+        <converters:InstallStepStateToBrushConverter x:Key="StateToBrush" />
+        <converters:InstallStepStateToGlyphConverter x:Key="StateToGlyph" />
+    </UserControl.Resources>
+
+    <DockPanel Margin="16">
+
+        <!-- Top bar: mode toggle + start/cancel button -->
+        <Grid DockPanel.Dock="Top"
+              ColumnDefinitions="*,Auto"
+              Margin="0,0,0,8">
+
+            <!-- Mode toggle -->
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                <RadioButton Content="{x:Static strings:Strings.InstallQuickMode}"
+                             IsChecked="{Binding Mode, Converter={x:Static vm:InstallModeConverter.Quick}}"
+                             GroupName="InstallMode"
+                             AutomationProperties.Name="Quick install mode" />
+                <RadioButton Content="{x:Static strings:Strings.InstallAdvancedMode}"
+                             IsChecked="{Binding Mode, Converter={x:Static vm:InstallModeConverter.Advanced}}"
+                             GroupName="InstallMode"
+                             AutomationProperties.Name="Advanced install mode" />
+            </StackPanel>
+
+            <!-- Start/Cancel — two buttons, visibility swaps -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <Button Content="{x:Static strings:Strings.InstallStart}"
+                        Command="{Binding StartInstallCommand}"
+                        IsVisible="{Binding !IsInstalling}"
+                        AutomationProperties.Name="Start installation" />
+                <Button Content="{x:Static strings:Strings.InstallCancel}"
+                        Command="{Binding CancelCommand}"
+                        IsVisible="{Binding IsInstalling}"
+                        AutomationProperties.Name="Cancel installation" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Overall progress bar -->
+        <ProgressBar DockPanel.Dock="Top"
+                     Value="{Binding OverallProgress}"
+                     Minimum="0" Maximum="1"
+                     Height="3"
+                     Margin="0,0,0,8" />
+
+        <!-- Summary bar -->
+        <TextBlock DockPanel.Dock="Bottom"
+                   Text="{Binding SummaryText}"
+                   IsVisible="{Binding !IsInstalling}"
+                   Margin="0,8,0,0"
+                   FontWeight="SemiBold" />
+
+        <!-- Step list -->
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Steps}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:InstallStepViewModel">
+                        <Border IsVisible="{Binding IsVisible}"
+                                Margin="0,2">
+                            <StackPanel>
+
+                                <!-- Main row: glyph + name + expand toggle -->
+                                <Grid ColumnDefinitions="28,*,Auto">
+
+                                    <!-- State glyph -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding State, Converter={StaticResource StateToGlyph}}"
+                                               Foreground="{Binding State, Converter={StaticResource StateToBrush}}"
+                                               FontFamily="Courier New,Courier,monospace"
+                                               FontSize="15"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Component name -->
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ComponentName}"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Expand/collapse command button -->
+                                    <Button Grid.Column="2"
+                                            Content="{Binding IsCommandExpanded, Converter={x:Static vm:BoolToExpandGlyphConverter.Instance}}"
+                                            Command="{Binding ToggleCommandExpandedCommand}"
+                                            AutomationProperties.Name="Toggle command detail" />
+                                </Grid>
+
+                                <!-- Collapsible command row -->
+                                <Border IsVisible="{Binding IsCommandExpanded}"
+                                        Margin="28,2,0,2">
+                                    <TextBlock Text="{Binding Command}"
+                                               FontFamily="Courier New,Courier,monospace"
+                                               FontSize="11"
+                                               Opacity="0.8"
+                                               TextWrapping="Wrap" />
+                                </Border>
+
+                                <!-- Error row (shown on failure) -->
+                                <Border IsVisible="{Binding IsFailure}"
+                                        Margin="28,2,0,2">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding ErrorMessage}"
+                                                   Foreground="#E05252"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="12" />
+                                        <TextBlock Text="{Binding SuggestedFix}"
+                                                   Opacity="0.7"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap" />
+                                        <Button Content="{x:Static strings:Strings.InstallRetry}"
+                                                Command="{Binding RetryCommand}"
+                                                CommandParameter="{Binding ComponentName}"
+                                                AutomationProperties.Name="Retry failed step" />
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </DockPanel>
 
 </UserControl>

@@ -3,6 +3,7 @@ using AppiumSetupManager.Core.Platform;
 using AppiumSetupManager.Core.Services;
 using FluentAssertions;
 using NSubstitute;
+using Xunit;
 
 namespace AppiumSetupManager.Tests.Services;
 

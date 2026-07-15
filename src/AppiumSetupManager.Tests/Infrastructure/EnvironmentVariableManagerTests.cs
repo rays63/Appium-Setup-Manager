@@ -2,6 +2,7 @@ using AppiumSetupManager.Core.Infrastructure;
 using AppiumSetupManager.Core.Platform;
 using FluentAssertions;
 using NSubstitute;
+using Xunit;
 
 namespace AppiumSetupManager.Tests.Infrastructure;
 

@@ -8,8 +8,12 @@ public interface ICleanupService
     Task<long> DeleteAsync(IEnumerable<StorageItem> items, CancellationToken ct = default);
 }
 
-public sealed class CleanupService(ICommandRunner runner) : ICleanupService
+public sealed class CleanupService : ICleanupService
 {
+    private readonly ICommandRunner _runner;
+
+    public CleanupService(ICommandRunner runner) => _runner = runner;
+
     public async Task<long> DeleteAsync(IEnumerable<StorageItem> items, CancellationToken ct = default)
     {
         // TODO: execute delete commands per item (Phase 5)

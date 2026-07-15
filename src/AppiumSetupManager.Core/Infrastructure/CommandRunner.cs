@@ -81,40 +81,51 @@ public sealed class CommandRunner : ICommandRunner
             SingleReader = true,
         });
 
+        // Readers catch cancellation internally so Task.WhenAll always completes,
+        // which lets the ContinueWith call lineChannel.Writer.Complete() reliably.
         var stdOutReader = Task.Run(async () =>
         {
-            string? line;
-            while ((line = await process.StandardOutput.ReadLineAsync(linkedCt).ConfigureAwait(false)) is not null)
-                lineChannel.Writer.TryWrite((line, LogEntryKind.StdOut));
-        }, linkedCt);
+            try
+            {
+                string? line;
+                while ((line = await process.StandardOutput.ReadLineAsync(linkedCt).ConfigureAwait(false)) is not null)
+                    lineChannel.Writer.TryWrite((line, LogEntryKind.StdOut));
+            }
+            catch (OperationCanceledException) { }
+        }, CancellationToken.None);
 
         var stdErrReader = Task.Run(async () =>
         {
-            string? line;
-            while ((line = await process.StandardError.ReadLineAsync(linkedCt).ConfigureAwait(false)) is not null)
-                lineChannel.Writer.TryWrite((line, LogEntryKind.StdErr));
-        }, linkedCt);
+            try
+            {
+                string? line;
+                while ((line = await process.StandardError.ReadLineAsync(linkedCt).ConfigureAwait(false)) is not null)
+                    lineChannel.Writer.TryWrite((line, LogEntryKind.StdErr));
+            }
+            catch (OperationCanceledException) { }
+        }, CancellationToken.None);
 
-        var completer = Task.WhenAll(stdOutReader, stdErrReader)
+        _ = Task.WhenAll(stdOutReader, stdErrReader)
             .ContinueWith(_ => lineChannel.Writer.Complete(), TaskScheduler.Default);
 
-        var waitForExit = process.WaitForExitAsync(linkedCt);
-
-        try
+        // C# CS1626: yield return is not allowed inside a try-catch block.
+        // The channel is completed by the ContinueWith above when both readers
+        // finish (including on timeout/cancellation), so ReadAllAsync terminates cleanly.
+        await foreach (var entry in lineChannel.Reader.ReadAllAsync(ct))
         {
-            await foreach (var entry in lineChannel.Reader.ReadAllAsync(linkedCt))
-            {
-                _log.LogOutput(entry.Line, entry.Kind);
-                yield return entry;
-            }
-
-            await Task.WhenAll(completer, waitForExit).ConfigureAwait(false);
+            _log.LogOutput(entry.Line, entry.Kind);
+            yield return entry;
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+
+        // If timeout fired but caller did not cancel, kill the process and log.
+        if (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
         {
             process.Kill(entireProcessTree: true);
             _log.LogError($"{command} {arguments}: stream timed out after {_timeout.TotalSeconds}s");
         }
+
+        try { await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false); }
+        catch (InvalidOperationException) { }
     }
 
     private static Process CreateProcess(string command, string arguments) => new()
