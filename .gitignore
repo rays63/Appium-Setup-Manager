@@ -107,3 +107,7 @@ appsettings.*.json
 *.cer
 *.entitlements
 build/output/
+
+
+.claude
+.claude/*
