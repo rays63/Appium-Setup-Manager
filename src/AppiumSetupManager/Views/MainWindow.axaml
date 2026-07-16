@@ -2,84 +2,204 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:AppiumSetupManager.ViewModels"
         xmlns:views="using:AppiumSetupManager.Views"
+        xmlns:conv="using:AppiumSetupManager.Converters"
         xmlns:strings="using:AppiumSetupManager.Localization"
         x:Class="AppiumSetupManager.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{x:Static strings:Strings.AppTitle}"
-        Width="1024" Height="700"
-        MinWidth="800" MinHeight="560">
+        Width="1100" Height="740"
+        MinWidth="880" MinHeight="580"
+        Background="{DynamicResource SurfaceBrush}">
 
     <DockPanel LastChildFill="True">
 
-        <!-- Left navigation panel -->
+        <!-- ===================== Left sidebar ===================== -->
         <Border DockPanel.Dock="Left"
-                Width="200"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                Width="260"
+                Background="{DynamicResource SidebarBrush}"
+                BorderBrush="{DynamicResource OutlineVariantBrush}"
                 BorderThickness="0,0,1,0">
-            <StackPanel Margin="8,16,8,8">
 
-                <TextBlock Text="{x:Static strings:Strings.AppTitle}"
-                           FontWeight="SemiBold"
-                           FontSize="14"
-                           TextWrapping="Wrap"
-                           Margin="8,0,8,12" />
+            <DockPanel LastChildFill="True">
 
-                <Separator Margin="0,0,0,8" />
+                <!-- Brand block -->
+                <StackPanel DockPanel.Dock="Top" Margin="20,22,20,18">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Width="36" Height="36"
+                                CornerRadius="8"
+                                Background="{DynamicResource PrimaryContainerBrush}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{x:Static strings:Strings.BrandBadge}"
+                                       Foreground="White"
+                                       FontWeight="Bold"
+                                       FontSize="18"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="1">
+                            <TextBlock Classes="headline-sm"
+                                       Text="{x:Static strings:Strings.BrandName}" />
+                            <TextBlock Classes="label-caps"
+                                       Foreground="{DynamicResource PrimaryBrush}"
+                                       Text="{x:Static strings:Strings.BrandSubtitle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
 
-                <RadioButton x:Name="NavDashboardButton"
-                             GroupName="Nav"
-                             Content="{x:Static strings:Strings.NavDashboard}"
-                             IsChecked="True"
-                             Command="{Binding NavigateToDashboardCommand}"
-                             HorizontalAlignment="Stretch"
-                             Padding="8,6"
-                             Margin="0,2"
-                             AutomationProperties.Name="Navigate to Dashboard" />
+                <!-- Bottom: Settings / Support placeholders -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="12,8,12,16" Spacing="0">
+                    <Border Height="1"
+                            Background="{DynamicResource OutlineVariantBrush}"
+                            Margin="4,0,4,10" />
+                    <Button Classes="navghost"
+                            AutomationProperties.Name="Settings">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{x:Static strings:Strings.NavSettingsGlyph}"
+                                       Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static strings:Strings.NavSettings}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="navghost"
+                            AutomationProperties.Name="Support">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{x:Static strings:Strings.NavSupportGlyph}"
+                                       Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static strings:Strings.NavSupport}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
 
-                <RadioButton x:Name="NavInstallButton"
-                             GroupName="Nav"
-                             Content="{x:Static strings:Strings.NavInstall}"
-                             Command="{Binding NavigateToInstallCommand}"
-                             HorizontalAlignment="Stretch"
-                             Padding="8,6"
-                             Margin="0,2"
-                             AutomationProperties.Name="Navigate to Install" />
+                <!-- Nav list -->
+                <StackPanel Margin="12,4,12,8" Spacing="0">
 
-                <RadioButton x:Name="NavDoctorButton"
-                             GroupName="Nav"
-                             Content="{x:Static strings:Strings.NavDoctor}"
-                             Command="{Binding NavigateToDoctorCommand}"
-                             HorizontalAlignment="Stretch"
-                             Padding="8,6"
-                             Margin="0,2"
-                             AutomationProperties.Name="Navigate to Doctor" />
+                    <RadioButton x:Name="NavDashboardButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToDashboardCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Dashboard}"
+                                 AutomationProperties.Name="Navigate to Dashboard">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{x:Static strings:Strings.NavDashboardGlyph}"
+                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static strings:Strings.NavDashboard}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
 
-                <RadioButton x:Name="NavStorageButton"
-                             GroupName="Nav"
-                             Content="{x:Static strings:Strings.NavStorage}"
-                             Command="{Binding NavigateToStorageCommand}"
-                             HorizontalAlignment="Stretch"
-                             Padding="8,6"
-                             Margin="0,2"
-                             AutomationProperties.Name="Navigate to Storage" />
+                    <RadioButton x:Name="NavInstallButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToInstallCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Install}"
+                                 AutomationProperties.Name="Navigate to Install">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{x:Static strings:Strings.NavInstallGlyph}"
+                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static strings:Strings.NavInstall}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
 
-            </StackPanel>
+                    <RadioButton x:Name="NavDoctorButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToDoctorCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Doctor}"
+                                 AutomationProperties.Name="Navigate to Doctor">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{x:Static strings:Strings.NavDoctorGlyph}"
+                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static strings:Strings.NavDoctor}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavStorageButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToStorageCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Storage}"
+                                 AutomationProperties.Name="Navigate to Storage">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{x:Static strings:Strings.NavStorageGlyph}"
+                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static strings:Strings.NavStorage}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                </StackPanel>
+
+            </DockPanel>
         </Border>
 
-        <!-- Main content area -->
-        <Grid RowDefinitions="*,Auto">
+        <!-- ===================== Right side ===================== -->
+        <Grid x:Name="RightGrid">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="220" MinHeight="120" MaxHeight="480" />
+            </Grid.RowDefinitions>
+
+            <!-- Top bar -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource SurfaceContainerLowBrush}"
+                    BorderBrush="{DynamicResource OutlineVariantBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="24,14">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+
+                    <TextBlock Grid.Column="0"
+                               Classes="headline-md"
+                               Text="{x:Static strings:Strings.TopBarTitle}"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center">
+                        <Border Classes="chip">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Border Classes="dot" Width="8" Height="8"
+                                        Background="{DynamicResource SecondaryBrush}" />
+                                <TextBlock Classes="body-sm muted"
+                                           Text="{x:Static strings:Strings.TopBarClusterStatus}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="chip">
+                            <TextBlock Classes="body-sm muted"
+                                       Text="{x:Static strings:Strings.TopBarActiveNodes}"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                    </StackPanel>
+
+                    <TextBox Grid.Column="3"
+                             Width="240"
+                             VerticalAlignment="Center"
+                             Watermark="{x:Static strings:Strings.TopBarSearchPlaceholder}"
+                             AutomationProperties.Name="Search"
+                             IsTabStop="True" />
+                </Grid>
+            </Border>
 
             <!-- Content region — ViewLocator resolves the correct view -->
-            <ContentControl Grid.Row="0"
+            <ContentControl Grid.Row="1"
+                            Margin="24"
                             Content="{Binding CurrentView}" />
 
-            <!-- Command log panel -->
-            <Border Grid.Row="1"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                    BorderThickness="0,1,0,0">
-                <views:CommandLogView DataContext="{Binding CommandLog}" />
-            </Border>
+            <!-- Drag to resize the command log panel -->
+            <GridSplitter x:Name="LogSplitter"
+                          Grid.Row="2"
+                          Height="6"
+                          HorizontalAlignment="Stretch"
+                          Background="Transparent"
+                          ResizeDirection="Rows"
+                          Cursor="SizeNorthSouth" />
+
+            <!-- Command log / terminal panel -->
+            <views:CommandLogView Grid.Row="3"
+                                  DataContext="{Binding CommandLog}" />
 
         </Grid>
 

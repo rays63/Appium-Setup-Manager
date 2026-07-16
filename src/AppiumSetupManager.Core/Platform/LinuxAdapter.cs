@@ -5,6 +5,7 @@ public sealed class LinuxAdapter : IPlatformAdapter
     public bool IsMacOs => false;
     public bool IsWindows => false;
     public bool IsLinux => true;
+    public string OsDisplayName => "Linux";
 
     public string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     public string DefaultAndroidSdkPath => Path.Combine(HomeDirectory, "Android", "Sdk");

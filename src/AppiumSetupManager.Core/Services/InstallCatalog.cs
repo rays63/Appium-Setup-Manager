@@ -15,6 +15,31 @@ public static class InstallCatalog
 {
     public static readonly IReadOnlyList<CatalogEntry> All = new List<CatalogEntry>
     {
+        // macOS-only prerequisites, in dependency order: Xcode CLI Tools must exist before
+        // Homebrew's own installer runs, and Homebrew must exist before anything below that
+        // installs via `brew`.
+        new CatalogEntry(
+            ComponentName:      "Xcode CLI Tools",
+            MacCommand:         "xcode-select --install",
+            WindowsCommand:     null,
+            LinuxCommand:       null,
+            MacOnly:            true,
+            PostInstallEnvVar:  null,
+            PostInstallPathDir: null,
+            SuggestedFix:       "Run 'xcode-select --install' manually in Terminal"
+        ),
+
+        new CatalogEntry(
+            ComponentName:      "Homebrew",
+            MacCommand:         "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+            WindowsCommand:     null,
+            LinuxCommand:       null,
+            MacOnly:            true,
+            PostInstallEnvVar:  null,
+            PostInstallPathDir: null,
+            SuggestedFix:       "Run the official installer yourself in Terminal: https://brew.sh — needed if the automated install requires a password (sudo) prompt this app can't answer"
+        ),
+
         new CatalogEntry(
             ComponentName:      "Node.js",
             MacCommand:         "brew install node",
@@ -43,7 +68,7 @@ public static class InstallCatalog
             WindowsCommand:     "winget install EclipseAdoptium.Temurin.21.JDK",
             LinuxCommand:       "sudo apt-get install -y temurin-21-jdk",
             MacOnly:            false,
-            PostInstallEnvVar:  null,
+            PostInstallEnvVar:  "JAVA_HOME",
             PostInstallPathDir: null,
             SuggestedFix:       "Ensure Homebrew (macOS), winget (Windows), or apt with Adoptium repository (Linux) is available"
         ),
@@ -79,17 +104,6 @@ public static class InstallCatalog
             PostInstallEnvVar:  null,
             PostInstallPathDir: null,
             SuggestedFix:       "Ensure Appium server is installed first"
-        ),
-
-        new CatalogEntry(
-            ComponentName:      "Xcode CLI Tools",
-            MacCommand:         "xcode-select --install",
-            WindowsCommand:     null,
-            LinuxCommand:       null,
-            MacOnly:            true,
-            PostInstallEnvVar:  null,
-            PostInstallPathDir: null,
-            SuggestedFix:       "Run 'xcode-select --install' manually in Terminal"
         ),
 
         new CatalogEntry(

@@ -143,6 +143,34 @@ public class CommandRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_ExecutableNotFound_ReturnsFailureInsteadOfThrowing()
+    {
+        var log = CreateLogMock();
+        var sut = new CommandRunner(log);
+
+        // A command name that will never exist on PATH — this is the exact real-world case of a
+        // dependency the app hasn't detected/installed yet (e.g. "appium" before it's installed).
+        var result = await sut.RunAsync("asm-definitely-not-a-real-binary", "--version");
+
+        result.Success.Should().BeFalse();
+        result.TimedOut.Should().BeFalse();
+        result.ExitCode.Should().NotBe(0);
+    }
+
+    [Fact]
+    public async Task StreamAsync_ExecutableNotFound_YieldsFailureInsteadOfThrowing()
+    {
+        var log = CreateLogMock();
+        var sut = new CommandRunner(log);
+
+        var results = new List<(string Line, LogEntryKind Kind)>();
+        await foreach (var entry in sut.StreamAsync("asm-definitely-not-a-real-binary", "--version"))
+            results.Add(entry);
+
+        results.Should().ContainSingle(e => e.Kind == LogEntryKind.StdErr);
+    }
+
+    [Fact]
     public async Task RunAsync_CapturesStdErr()
     {
         var log = CreateLogMock();

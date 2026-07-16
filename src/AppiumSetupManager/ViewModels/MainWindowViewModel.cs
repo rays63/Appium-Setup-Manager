@@ -1,5 +1,8 @@
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using AppiumSetupManager.Core.Infrastructure;
+using AppiumSetupManager.Core.Platform;
 using AppiumSetupManager.Core.Services;
 
 namespace AppiumSetupManager.ViewModels;
@@ -8,7 +11,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly DashboardViewModel _dashboard;
     private readonly InstallViewModel   _install;
-    private readonly DoctorViewModel    _doctor    = new();
+    private readonly DoctorViewModel    _doctor;
     private readonly StorageViewModel   _storage   = new();
 
     public CommandLogViewModel CommandLog { get; }
@@ -19,12 +22,20 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _activeNav = "Dashboard";
 
-    public MainWindowViewModel(ILogService logService, IDetectionService detectionService, InstallViewModel installViewModel)
+    public MainWindowViewModel(ILogService logService, IDetectionService detectionService, IInstallerService installerService, IPlatformAdapter platform, IEnvironmentVariableManager envManager, InstallViewModel installViewModel, DoctorViewModel doctorViewModel)
     {
-        _dashboard   = new DashboardViewModel(detectionService);
+        _dashboard   = new DashboardViewModel(detectionService, installerService, platform, envManager);
         _install     = installViewModel;
+        _doctor      = doctorViewModel;
         CommandLog   = new CommandLogViewModel(logService);
         _currentView = _dashboard;
+
+        installViewModel.InstallCompleted += () =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                CurrentView = _doctor;
+                ActiveNav   = "Doctor";
+            });
     }
 
     [RelayCommand]

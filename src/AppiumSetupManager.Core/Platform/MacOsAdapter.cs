@@ -5,6 +5,7 @@ public sealed class MacOsAdapter : IPlatformAdapter
     public bool IsMacOs => true;
     public bool IsWindows => false;
     public bool IsLinux => false;
+    public string OsDisplayName => "macOS";
 
     public string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     public string DefaultAndroidSdkPath => Path.Combine(HomeDirectory, "Library", "Android", "sdk");

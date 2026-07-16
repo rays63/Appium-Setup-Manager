@@ -12,59 +12,65 @@
         <converters:BoolToExpandCollapseConverter x:Key="BoolToExpandCollapseConverter" />
     </UserControl.Resources>
 
-    <DockPanel>
+    <Border Background="{DynamicResource SurfaceContainerLowestBrush}"
+            BorderBrush="{DynamicResource OutlineVariantBrush}"
+            BorderThickness="0,1,0,0">
+        <DockPanel>
 
-        <!-- Header row -->
-        <Border DockPanel.Dock="Top"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
-            <Grid ColumnDefinitions="*,Auto">
+            <!-- Header row -->
+            <Border DockPanel.Dock="Top"
+                    Background="{DynamicResource SurfaceContainerLowestBrush}"
+                    BorderBrush="{DynamicResource OutlineVariantBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
 
-                <TextBlock Grid.Column="0"
-                           Text="{x:Static strings:Strings.CommandLogTitle}"
-                           VerticalAlignment="Center"
-                           Margin="8,4" />
+                    <TextBlock Grid.Column="0"
+                               Text="{x:Static strings:Strings.CommandLogFileName}"
+                               FontFamily="{DynamicResource MonoFont}"
+                               FontSize="{DynamicResource FontSizeCodeSm}"
+                               Foreground="{DynamicResource OnSurfaceVariantBrush}"
+                               VerticalAlignment="Center" />
 
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            Margin="4,2">
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                VerticalAlignment="Center">
+                        <Button Classes="ghosticon"
+                                Content="{Binding IsCollapsed, Converter={StaticResource BoolToExpandCollapseConverter}}"
+                                Command="{Binding ToggleCollapseCommand}"
+                                AutomationProperties.Name="Toggle command log" />
+                        <Button Classes="ghosticon"
+                                Content="{x:Static strings:Strings.CommandLogExport}"
+                                Command="{Binding ExportLogCommand}"
+                                AutomationProperties.Name="Export log" />
+                    </StackPanel>
 
-                    <Button Content="{Binding IsCollapsed, Converter={StaticResource BoolToExpandCollapseConverter}}"
-                            Command="{Binding ToggleCollapseCommand}"
-                            AutomationProperties.Name="Toggle command log"
-                            Padding="8,4"
-                            Margin="2,0" />
+                </Grid>
+            </Border>
 
-                    <Button Content="{x:Static strings:Strings.CommandLogExport}"
-                            Command="{Binding ExportLogCommand}"
-                            AutomationProperties.Name="Export log"
-                            Padding="8,4"
-                            Margin="2,0" />
+            <!-- Log output -->
+            <ScrollViewer x:Name="LogScrollViewer"
+                          IsVisible="{Binding !IsCollapsed}"
+                          Padding="14,12,14,48"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Entries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:LogEntry">
+                            <TextBlock Text="{Binding Text}"
+                                       Foreground="{Binding Kind, Converter={StaticResource LogEntryKindToBrushConverter}}"
+                                       FontFamily="{DynamicResource MonoFont}"
+                                       FontSize="{DynamicResource FontSizeCodeSm}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="20"
+                                       Margin="0,3" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-                </StackPanel>
-
-            </Grid>
-        </Border>
-
-        <!-- Log output -->
-        <ScrollViewer x:Name="LogScrollViewer"
-                      IsVisible="{Binding !IsCollapsed}"
-                      MaxHeight="250"
-                      HorizontalScrollBarVisibility="Disabled"
-                      VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Entries}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="models:LogEntry">
-                        <TextBlock Text="{Binding Text}"
-                                   Foreground="{Binding Kind, Converter={StaticResource LogEntryKindToBrushConverter}}"
-                                   FontFamily="Courier New,Courier,monospace"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   Margin="4,1" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-
-    </DockPanel>
+        </DockPanel>
+    </Border>
 
 </UserControl>

@@ -5,6 +5,7 @@ public sealed class WindowsAdapter : IPlatformAdapter
     public bool IsMacOs => false;
     public bool IsWindows => true;
     public bool IsLinux => false;
+    public string OsDisplayName => "Windows";
 
     public string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     public string DefaultAndroidSdkPath => Path.Combine(HomeDirectory, "AppData", "Local", "Android", "Sdk");

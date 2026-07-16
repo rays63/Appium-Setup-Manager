@@ -8,22 +8,29 @@ using Avalonia.Threading;
 
 namespace AppiumSetupManager.ViewModels;
 
-public enum InstallMode { Quick, Advanced }
-
 public partial class InstallViewModel : ObservableObject, IDisposable
 {
     private readonly IInstallerService _installer;
+    private readonly IDetectionService _detection;
 
+    private CancellationTokenSource _scanCts = new();
     private CancellationTokenSource _installCts = new();
     private readonly Dictionary<string, InstallStepViewModel> _stepMap = new();
 
+    /// <summary>One card per catalog component, each with its own Install/Update button.</summary>
+    public ObservableCollection<ComponentStatusViewModel> Components { get; } = new();
+
+    /// <summary>Live transcript of the most recent "Install All Missing" run.</summary>
     public ObservableCollection<InstallStepViewModel> Steps { get; } = new();
 
     [ObservableProperty]
-    private InstallMode _mode = InstallMode.Quick;
+    private bool _isScanning;
 
     [ObservableProperty]
-    private bool _isInstalling;
+    private bool _isInstallingAll;
+
+    [ObservableProperty]
+    private bool _hasRunLog;
 
     [ObservableProperty]
     private string _summaryText = string.Empty;
@@ -31,33 +38,34 @@ public partial class InstallViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private double _overallProgress;
 
-    public bool IsAdvancedMode => Mode == InstallMode.Advanced;
+    private bool CanInstallAll() => !IsInstallingAll;
+    private bool CanCancel() => IsInstallingAll;
 
-    partial void OnModeChanged(InstallMode value) => OnPropertyChanged(nameof(IsAdvancedMode));
+    public event Action? InstallCompleted;
 
-    private bool CanInstall() => !IsInstalling;
-    private bool CanCancel() => IsInstalling;
-
-    public InstallViewModel(IInstallerService installer)
+    public InstallViewModel(IInstallerService installer, IDetectionService detection)
     {
         _installer = installer;
+        _detection = detection;
+        _ = RefreshComponentsAsync();
     }
 
-    [RelayCommand(CanExecute = nameof(CanInstall))]
-    private async Task StartInstallAsync()
+    [RelayCommand(CanExecute = nameof(CanInstallAll))]
+    private async Task InstallAllMissingAsync()
     {
         _installCts.Cancel();
         _installCts = new CancellationTokenSource();
         var ct = _installCts.Token;
 
-        IsInstalling = true;
-        StartInstallCommand.NotifyCanExecuteChanged();
+        IsInstallingAll = true;
+        HasRunLog = true;
+        InstallAllMissingCommand.NotifyCanExecuteChanged();
         CancelCommand.NotifyCanExecuteChanged();
         SummaryText = string.Empty;
         OverallProgress = 0;
+        SetComponentsBusy(true);
 
-        // Clear from UI thread
-        Dispatcher.UIThread.Post(() =>
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
             Steps.Clear();
             _stepMap.Clear();
@@ -65,11 +73,7 @@ public partial class InstallViewModel : ObservableObject, IDisposable
 
         try
         {
-            var source = Mode == InstallMode.Quick
-                ? _installer.InstallAllAsync(ct)
-                : _installer.InstallSelectedAsync(GetSelectedComponents(), ct);
-
-            await DrainAsync(source, ct);
+            await DrainAsync(_installer.InstallAllAsync(ct), ct);
         }
         catch (OperationCanceledException)
         {
@@ -81,11 +85,17 @@ public partial class InstallViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            IsInstalling = false;
-            StartInstallCommand.NotifyCanExecuteChanged();
+            IsInstallingAll = false;
+            InstallAllMissingCommand.NotifyCanExecuteChanged();
             CancelCommand.NotifyCanExecuteChanged();
+            SetComponentsBusy(false);
             if (string.IsNullOrEmpty(SummaryText))
                 UpdateSummary();
+
+            await RefreshComponentsAsync();
+
+            if (!ct.IsCancellationRequested && SummaryText != Strings.InstallCancelled && SummaryText != Strings.InstallFailed)
+                InstallCompleted?.Invoke();
         }
     }
 
@@ -95,17 +105,19 @@ public partial class InstallViewModel : ObservableObject, IDisposable
         _installCts.Cancel();
     }
 
-    [RelayCommand(CanExecute = nameof(CanInstall))]
+    [RelayCommand(CanExecute = nameof(CanInstallAll))]
     private async Task RetryAsync(string componentName)
     {
         _installCts.Cancel();
         _installCts = new CancellationTokenSource();
         var ct = _installCts.Token;
 
-        IsInstalling = true;
-        StartInstallCommand.NotifyCanExecuteChanged();
+        IsInstallingAll = true;
+        HasRunLog = true;
+        InstallAllMissingCommand.NotifyCanExecuteChanged();
         CancelCommand.NotifyCanExecuteChanged();
         RetryCommand.NotifyCanExecuteChanged();
+        SetComponentsBusy(true);
 
         try
         {
@@ -115,12 +127,67 @@ public partial class InstallViewModel : ObservableObject, IDisposable
         catch (Exception) { }
         finally
         {
-            IsInstalling = false;
-            StartInstallCommand.NotifyCanExecuteChanged();
+            IsInstallingAll = false;
+            InstallAllMissingCommand.NotifyCanExecuteChanged();
             CancelCommand.NotifyCanExecuteChanged();
             RetryCommand.NotifyCanExecuteChanged();
+            SetComponentsBusy(false);
             UpdateSummary();
+            await RefreshComponentsAsync();
         }
+    }
+
+    /// <summary>Installs a single component (per-card button), then refreshes all cards.</summary>
+    private async Task InstallOneAsync(ComponentStatusViewModel component)
+    {
+        if (component.CatalogName is null)
+            return;
+
+        try
+        {
+            await foreach (var _ in _installer.InstallSelectedAsync(new[] { component.CatalogName }))
+            {
+                // Progress is visible via the card's own spinner; no transcript entry needed here.
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Non-fatal — fall through to a refresh so the card reflects whatever state resulted.
+        }
+
+        await RefreshComponentsAsync();
+    }
+
+    private async Task RefreshComponentsAsync()
+    {
+        _scanCts.Cancel();
+        _scanCts = new CancellationTokenSource();
+        var ct = _scanCts.Token;
+
+        IsScanning = true;
+
+        try
+        {
+            var results = await _detection.ScanAllAsync(ct);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Components.Clear();
+                foreach (var result in results)
+                    Components.Add(new ComponentStatusViewModel(result, InstallOneAsync));
+            });
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception) { }
+        finally
+        {
+            IsScanning = false;
+        }
+    }
+
+    private void SetComponentsBusy(bool busy)
+    {
+        foreach (var component in Components)
+            component.IsExternallyBusy = busy;
     }
 
     private async Task DrainAsync(IAsyncEnumerable<InstallStep> steps, CancellationToken ct)
@@ -128,9 +195,6 @@ public partial class InstallViewModel : ObservableObject, IDisposable
         await foreach (var step in steps.WithCancellation(ct).ConfigureAwait(false))
         {
             var captured = step;
-            // InvokeAsync (not Post) — awaiting ensures the UI update is fully applied
-            // before the loop advances to the next step, so UpdateSummary in the
-            // finally block always reads a complete, up-to-date Steps collection.
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (_stepMap.TryGetValue(captured.ComponentName, out var vm))
@@ -162,11 +226,10 @@ public partial class InstallViewModel : ObservableObject, IDisposable
         SummaryText = string.Format(Strings.InstallSummaryFormat, done, total);
     }
 
-    private IEnumerable<string> GetSelectedComponents() =>
-        Steps.Where(s => s.IsVisible).Select(s => s.ComponentName);
-
     public void Dispose()
     {
+        _scanCts.Cancel();
+        _scanCts.Dispose();
         _installCts.Cancel();
         _installCts.Dispose();
     }

@@ -7,124 +7,195 @@
              x:DataType="vm:InstallViewModel">
 
     <UserControl.Resources>
+        <converters:DetectionStateToBrushConverter x:Key="DetectionStateToBrushConverter" />
         <converters:InstallStepStateToBrushConverter x:Key="StateToBrush" />
         <converters:InstallStepStateToGlyphConverter x:Key="StateToGlyph" />
     </UserControl.Resources>
 
-    <DockPanel Margin="16">
+    <DockPanel>
 
-        <!-- Top bar: mode toggle + start/cancel button -->
+        <!-- Header: title + bulk install / cancel -->
         <Grid DockPanel.Dock="Top"
               ColumnDefinitions="*,Auto"
-              Margin="0,0,0,8">
-
-            <!-- Mode toggle -->
-            <StackPanel Grid.Column="0"
-                        Orientation="Horizontal"
-                        Spacing="8">
-                <RadioButton Content="{x:Static strings:Strings.InstallQuickMode}"
-                             IsChecked="{Binding Mode, Converter={x:Static vm:InstallModeConverter.Quick}}"
-                             GroupName="InstallMode"
-                             AutomationProperties.Name="Quick install mode" />
-                <RadioButton Content="{x:Static strings:Strings.InstallAdvancedMode}"
-                             IsChecked="{Binding Mode, Converter={x:Static vm:InstallModeConverter.Advanced}}"
-                             GroupName="InstallMode"
-                             AutomationProperties.Name="Advanced install mode" />
+              Margin="0,0,0,16">
+            <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                <TextBlock Classes="headline-md" Text="{x:Static strings:Strings.NavInstall}" />
+                <TextBlock Classes="body-sm muted"
+                           Text="{Binding SummaryText}"
+                           IsVisible="{Binding SummaryText, Converter={x:Static ObjectConverters.IsNotNull}}" />
             </StackPanel>
 
-            <!-- Start/Cancel — two buttons, visibility swaps -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                <Button Content="{x:Static strings:Strings.InstallStart}"
-                        Command="{Binding StartInstallCommand}"
-                        IsVisible="{Binding !IsInstalling}"
-                        AutomationProperties.Name="Start installation" />
-                <Button Content="{x:Static strings:Strings.InstallCancel}"
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Classes="primary"
+                        Content="{x:Static strings:Strings.InstallAllMissing}"
+                        Command="{Binding InstallAllMissingCommand}"
+                        IsVisible="{Binding !IsInstallingAll}"
+                        AutomationProperties.Name="Install all missing components" />
+                <Button Classes="secondary"
+                        Content="{x:Static strings:Strings.InstallCancel}"
                         Command="{Binding CancelCommand}"
-                        IsVisible="{Binding IsInstalling}"
+                        IsVisible="{Binding IsInstallingAll}"
                         AutomationProperties.Name="Cancel installation" />
             </StackPanel>
         </Grid>
 
-        <!-- Overall progress bar -->
+        <!-- Progress bars -->
+        <ProgressBar DockPanel.Dock="Top"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsScanning}"
+                     Margin="0,0,0,16" />
         <ProgressBar DockPanel.Dock="Top"
                      Value="{Binding OverallProgress}"
                      Minimum="0" Maximum="1"
-                     Height="3"
-                     Margin="0,0,0,8" />
+                     IsVisible="{Binding IsInstallingAll}"
+                     Margin="0,0,0,16" />
 
-        <!-- Summary bar -->
-        <TextBlock DockPanel.Dock="Bottom"
-                   Text="{Binding SummaryText}"
-                   IsVisible="{Binding !IsInstalling}"
-                   Margin="0,8,0,0"
-                   FontWeight="SemiBold" />
-
-        <!-- Step list -->
         <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding Steps}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:InstallStepViewModel">
-                        <Border IsVisible="{Binding IsVisible}"
-                                Margin="0,2">
-                            <StackPanel>
+            <StackPanel Spacing="20">
 
-                                <!-- Main row: glyph + name + expand toggle -->
-                                <Grid ColumnDefinitions="28,*,Auto">
+                <!-- Per-component install cards -->
+                <ItemsControl ItemsSource="{Binding Components}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ComponentStatusViewModel">
+                            <Border Classes="card"
+                                    IsVisible="{Binding IsVisible}"
+                                    Margin="0,0,0,12">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
 
-                                    <!-- State glyph -->
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding State, Converter={StaticResource StateToGlyph}}"
-                                               Foreground="{Binding State, Converter={StaticResource StateToBrush}}"
-                                               FontFamily="Courier New,Courier,monospace"
-                                               FontSize="15"
-                                               VerticalAlignment="Center" />
+                                    <Border Grid.Column="0"
+                                            Classes="dot"
+                                            Background="{Binding State, Converter={StaticResource DetectionStateToBrushConverter}}"
+                                            Margin="2,0,16,0"
+                                            VerticalAlignment="Center"
+                                            ToolTip.Tip="{Binding StatusLabel}"
+                                            AutomationProperties.Name="{Binding StatusLabel}" />
 
-                                    <!-- Component name -->
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding ComponentName}"
-                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+                                        <TextBlock Classes="body-md" FontWeight="SemiBold" Text="{Binding Name}" />
+                                        <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <TextBlock Classes="mono"
+                                                       Foreground="{DynamicResource OnSurfaceVariantBrush}"
+                                                       Text="{Binding VersionDisplay}"
+                                                       IsVisible="{Binding VersionDisplay, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                            <TextBlock Classes="mono muted"
+                                                       Text="{Binding InstallPath}"
+                                                       MaxWidth="360"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip.Tip="{Binding InstallPath}"
+                                                       IsVisible="{Binding InstallPath, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                        </StackPanel>
+                                    </StackPanel>
 
-                                    <!-- Expand/collapse command button -->
-                                    <Button Grid.Column="2"
-                                            Content="{Binding IsCommandExpanded, Converter={x:Static vm:BoolToExpandGlyphConverter.Instance}}"
-                                            Command="{Binding ToggleCommandExpandedCommand}"
-                                            AutomationProperties.Name="Toggle command detail" />
+                                    <StackPanel Grid.Column="2"
+                                                Orientation="Horizontal"
+                                                Spacing="12"
+                                                VerticalAlignment="Center">
+
+                                        <Border Classes="pill"
+                                                VerticalAlignment="Center"
+                                                Background="{Binding State, Converter={x:Static converters:DetectionStateToPillBackgroundConverter.Instance}}">
+                                            <TextBlock Classes="label-caps"
+                                                       Foreground="{Binding State, Converter={StaticResource DetectionStateToBrushConverter}}"
+                                                       Text="{Binding State, Converter={x:Static converters:DetectionStateToPillTextConverter.Instance}}" />
+                                        </Border>
+
+                                        <Button Classes="secondary"
+                                                VerticalAlignment="Center"
+                                                Command="{Binding InstallCommand}"
+                                                IsVisible="{Binding IsInstallable}"
+                                                IsEnabled="{Binding CanClickInstall}"
+                                                AutomationProperties.Name="{Binding InstallActionLabel}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Classes="spinner" Text="⟳" IsVisible="{Binding IsInstalling}" />
+                                                <TextBlock Text="{Binding InstallActionLabel}" />
+                                            </StackPanel>
+                                        </Button>
+
+                                    </StackPanel>
+
                                 </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                                <!-- Collapsible command row -->
-                                <Border IsVisible="{Binding IsCommandExpanded}"
-                                        Margin="28,2,0,2">
-                                    <TextBlock Text="{Binding Command}"
-                                               FontFamily="Courier New,Courier,monospace"
-                                               FontSize="11"
-                                               Opacity="0.8"
-                                               TextWrapping="Wrap" />
-                                </Border>
+                <!-- Last run transcript — populated by "Install All Missing" / Retry -->
+                <Expander Header="{x:Static strings:Strings.InstallLastRunLog}"
+                          IsVisible="{Binding HasRunLog}"
+                          IsExpanded="True">
+                    <ItemsControl ItemsSource="{Binding Steps}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:InstallStepViewModel">
+                                <Border Classes="card"
+                                        IsVisible="{Binding IsVisible}"
+                                        Margin="0,0,0,10">
+                                    <StackPanel Spacing="10">
 
-                                <!-- Error row (shown on failure) -->
-                                <Border IsVisible="{Binding IsFailure}"
-                                        Margin="28,2,0,2">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="{Binding ErrorMessage}"
-                                                   Foreground="#E05252"
-                                                   TextWrapping="Wrap"
-                                                   FontSize="12" />
-                                        <TextBlock Text="{Binding SuggestedFix}"
-                                                   Opacity="0.7"
-                                                   FontSize="11"
-                                                   TextWrapping="Wrap" />
-                                        <Button Content="{x:Static strings:Strings.InstallRetry}"
-                                                Command="{Binding RetryCommand}"
-                                                CommandParameter="{Binding ComponentName}"
-                                                AutomationProperties.Name="Retry failed step" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding State, Converter={StaticResource StateToGlyph}}"
+                                                       Foreground="{Binding State, Converter={StaticResource StateToBrush}}"
+                                                       FontFamily="{DynamicResource MonoFont}"
+                                                       FontSize="18"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,14,0" />
+                                            <TextBlock Grid.Column="1"
+                                                       Classes="body-md"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding ComponentName}"
+                                                       VerticalAlignment="Center" />
+                                            <Button Grid.Column="2"
+                                                    Classes="ghosticon"
+                                                    Content="{Binding IsCommandExpanded, Converter={x:Static vm:BoolToExpandGlyphConverter.Instance}}"
+                                                    Command="{Binding ToggleCommandExpandedCommand}"
+                                                    AutomationProperties.Name="Toggle command detail" />
+                                        </Grid>
+
+                                        <Border IsVisible="{Binding IsCommandExpanded}"
+                                                Background="{DynamicResource SurfaceContainerLowestBrush}"
+                                                BorderBrush="{DynamicResource OutlineVariantBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="12,10">
+                                            <TextBlock Text="{Binding Command}"
+                                                       FontFamily="{DynamicResource MonoFont}"
+                                                       FontSize="{DynamicResource FontSizeCodeSm}"
+                                                       Foreground="{DynamicResource OnSurfaceVariantBrush}"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+
+                                        <Border IsVisible="{Binding IsFailure}"
+                                                Background="{DynamicResource SurfaceContainerLowestBrush}"
+                                                BorderBrush="{DynamicResource ErrorBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="{Binding ErrorMessage}"
+                                                           Foreground="{DynamicResource ErrorBrush}"
+                                                           FontSize="{DynamicResource FontSizeBodySm}"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Classes="muted"
+                                                           Text="{Binding SuggestedFix}"
+                                                           FontSize="{DynamicResource FontSizeCodeSm}"
+                                                           TextWrapping="Wrap" />
+                                                <Button Classes="secondary"
+                                                        HorizontalAlignment="Left"
+                                                        Content="{x:Static strings:Strings.InstallRetry}"
+                                                        Command="{Binding RetryCommand}"
+                                                        CommandParameter="{Binding ComponentName}"
+                                                        AutomationProperties.Name="Retry failed step" />
+                                            </StackPanel>
+                                        </Border>
+
                                     </StackPanel>
                                 </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Expander>
 
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            </StackPanel>
         </ScrollViewer>
 
     </DockPanel>

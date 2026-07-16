@@ -1,12 +1,138 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:converters="using:AppiumSetupManager.Converters"
              xmlns:strings="using:AppiumSetupManager.Localization"
              x:Class="AppiumSetupManager.Views.DoctorView"
              x:DataType="vm:DoctorViewModel">
 
-    <TextBlock Text="{x:Static strings:Strings.DoctorPlaceholder}"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <UserControl.Resources>
+        <converters:CheckResultToBrushConverter x:Key="ResultToBrush" />
+        <converters:CheckResultToGlyphConverter x:Key="ResultToGlyph" />
+
+        <!-- Shared check-row card, reused by every group -->
+        <DataTemplate x:Key="CheckCard" x:DataType="vm:DoctorCheckViewModel">
+            <Border Classes="card" Margin="0,0,0,10">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding Result, Converter={StaticResource ResultToGlyph}}"
+                               Foreground="{Binding Result, Converter={StaticResource ResultToBrush}}"
+                               FontFamily="{DynamicResource MonoFont}"
+                               FontSize="18"
+                               VerticalAlignment="Center"
+                               Margin="0,0,14,0" />
+                    <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Classes="body-md" FontWeight="SemiBold" Text="{Binding Name}" />
+                        <TextBlock Classes="body-sm muted"
+                                   Text="{Binding Description}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="2"
+                            Classes="secondary"
+                            Content="{x:Static strings:Strings.DoctorFix}"
+                            Command="{Binding FixCommand}"
+                            CommandParameter="{Binding Name}"
+                            IsVisible="{Binding CanAutoFix}"
+                            IsEnabled="{Binding !IsFixing}"
+                            AutomationProperties.Name="Fix this check"
+                            VerticalAlignment="Center"
+                            Margin="12,0,0,0" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- Header -->
+        <Grid DockPanel.Dock="Top"
+              ColumnDefinitions="*,Auto"
+              Margin="0,0,0,18">
+            <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                <TextBlock Classes="headline-md" Text="{x:Static strings:Strings.NavDoctor}" />
+                <TextBlock Classes="body-sm muted" Text="{Binding SummaryText}" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Classes="primary"
+                    VerticalAlignment="Center"
+                    Content="{x:Static strings:Strings.DoctorRerun}"
+                    Command="{Binding RunChecksCommand}"
+                    AutomationProperties.Name="Re-run doctor checks" />
+        </Grid>
+
+        <!-- Progress bar while running -->
+        <ProgressBar DockPanel.Dock="Top"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsRunning}"
+                     Margin="0,0,0,16" />
+
+        <!-- Grouped check list -->
+        <ScrollViewer>
+            <StackPanel Spacing="20">
+
+                <!-- Dependencies -->
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="label-caps"
+                               Text="{Binding Source={x:Static strings:Strings.DoctorGroupDependencies}, Converter={x:Static converters:ToUpperConverter.Instance}}" />
+                    <ItemsControl ItemsSource="{Binding Checks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DoctorCheckViewModel">
+                                <ContentControl Content="{Binding}"
+                                                ContentTemplate="{StaticResource CheckCard}"
+                                                IsVisible="{Binding Group, Converter={x:Static vm:GroupFilterConverter.Dependencies}}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Environment -->
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="label-caps"
+                               Text="{Binding Source={x:Static strings:Strings.DoctorGroupEnvironment}, Converter={x:Static converters:ToUpperConverter.Instance}}" />
+                    <ItemsControl ItemsSource="{Binding Checks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DoctorCheckViewModel">
+                                <ContentControl Content="{Binding}"
+                                                ContentTemplate="{StaticResource CheckCard}"
+                                                IsVisible="{Binding Group, Converter={x:Static vm:GroupFilterConverter.Environment}}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Drivers -->
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="label-caps"
+                               Text="{Binding Source={x:Static strings:Strings.DoctorGroupDrivers}, Converter={x:Static converters:ToUpperConverter.Instance}}" />
+                    <ItemsControl ItemsSource="{Binding Checks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DoctorCheckViewModel">
+                                <ContentControl Content="{Binding}"
+                                                ContentTemplate="{StaticResource CheckCard}"
+                                                IsVisible="{Binding Group, Converter={x:Static vm:GroupFilterConverter.Drivers}}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Tools -->
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="label-caps"
+                               Text="{Binding Source={x:Static strings:Strings.DoctorGroupTools}, Converter={x:Static converters:ToUpperConverter.Instance}}" />
+                    <ItemsControl ItemsSource="{Binding Checks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DoctorCheckViewModel">
+                                <ContentControl Content="{Binding}"
+                                                ContentTemplate="{StaticResource CheckCard}"
+                                                IsVisible="{Binding Group, Converter={x:Static vm:GroupFilterConverter.Tools}}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
 
 </UserControl>

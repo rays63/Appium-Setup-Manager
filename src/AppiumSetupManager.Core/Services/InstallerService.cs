@@ -67,6 +67,18 @@ public sealed class InstallerService : IInstallerService
         return entry.LinuxCommand;
     }
 
+    // Some catalog entries use a user-facing name that differs from the DetectionService probe
+    // that actually verifies they're present — "JDK 21" is satisfied once the "JDK" probe reports
+    // Found; "Android SDK" is satisfied once "ADB" does. Without this alias, GetSkipSet can never
+    // match these two entries against a scan, so they'd be re-installed on every run even when
+    // already present (e.g. "Update" on an already-current ADB re-running the whole SDK cask install
+    // for no reason every single time).
+    private static readonly Dictionary<string, string> SkipCheckAlias = new(StringComparer.Ordinal)
+    {
+        ["JDK 21"]      = "JDK",
+        ["Android SDK"] = "ADB",
+    };
+
     private static HashSet<string> GetSkipSet(IReadOnlyList<ComponentStatus> scan)
     {
         var set = new HashSet<string>(StringComparer.Ordinal);
@@ -75,6 +87,13 @@ public sealed class InstallerService : IInstallerService
             if (status.State == DetectionState.Found || status.State == DetectionState.NotApplicable)
                 set.Add(status.Name);
         }
+
+        foreach (var (catalogName, detectionName) in SkipCheckAlias)
+        {
+            if (set.Contains(detectionName))
+                set.Add(catalogName);
+        }
+
         return set;
     }
 
@@ -150,15 +169,14 @@ public sealed class InstallerService : IInstallerService
                 }
                 catch { /* swallow — non-fatal env setup failure */ }
             }
-            else if (entry.PostInstallEnvVar is not null)
+            else if (entry.PostInstallEnvVar == "JAVA_HOME")
             {
-                // Future non-ANDROID_HOME env vars follow the same pattern.
                 try
                 {
-                    await _envManager.SetUserAsync(entry.PostInstallEnvVar, string.Empty, ct)
-                        .ConfigureAwait(false);
+                    // Best-effort: locate the JDK we (or the user) just installed and point JAVA_HOME at it.
+                    await _envManager.TryConfigureJavaHomeAsync(ct).ConfigureAwait(false);
                 }
-                catch { /* swallow */ }
+                catch { /* swallow — non-fatal env setup failure */ }
             }
 
             if (entry.PostInstallPathDir == "<platform-tools>")

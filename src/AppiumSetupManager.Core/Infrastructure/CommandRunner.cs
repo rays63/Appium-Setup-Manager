@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
@@ -32,7 +33,18 @@ public sealed class CommandRunner : ICommandRunner
         _log.LogCommand($"{command} {arguments}");
 
         using var process = CreateProcess(command, arguments);
-        process.Start();
+
+        try
+        {
+            process.Start();
+        }
+        catch (Win32Exception ex)
+        {
+            // The executable isn't installed / isn't on PATH — this is an expected outcome for a
+            // setup-manager app (that's exactly what it's meant to detect), not an exceptional one.
+            _log.LogOutput(ex.Message, LogEntryKind.StdErr);
+            return new CommandResult($"{command} {arguments}", -1, string.Empty, ex.Message, TimedOut: false);
+        }
 
         var stdOutTask = process.StandardOutput.ReadToEndAsync(ct);
         var stdErrTask = process.StandardError.ReadToEndAsync(ct);
@@ -73,7 +85,23 @@ public sealed class CommandRunner : ICommandRunner
         var linkedCt = timeoutCts.Token;
 
         using var process = CreateProcess(command, arguments);
-        process.Start();
+
+        string? startFailure = null;
+        try
+        {
+            process.Start();
+        }
+        catch (Win32Exception ex)
+        {
+            startFailure = ex.Message;
+        }
+
+        if (startFailure is not null)
+        {
+            _log.LogOutput(startFailure, LogEntryKind.StdErr);
+            yield return (startFailure, LogEntryKind.StdErr);
+            yield break;
+        }
 
         var lineChannel = Channel.CreateUnbounded<(string Line, LogEntryKind Kind)>(new UnboundedChannelOptions
         {
@@ -128,9 +156,9 @@ public sealed class CommandRunner : ICommandRunner
         catch (InvalidOperationException) { }
     }
 
-    private static Process CreateProcess(string command, string arguments) => new()
+    private static Process CreateProcess(string command, string arguments)
     {
-        StartInfo = new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = command,
             Arguments = arguments,
@@ -138,6 +166,13 @@ public sealed class CommandRunner : ICommandRunner
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-        }
-    };
+        };
+
+        // Every command this app runs is meant to complete unattended — this is a setup-manager,
+        // not an interactive shell. NONINTERACTIVE is Homebrew's own documented opt-out of prompts
+        // (e.g. its install script); harmless for every other command, which never reads it.
+        startInfo.Environment["NONINTERACTIVE"] = "1";
+
+        return new Process { StartInfo = startInfo };
+    }
 }

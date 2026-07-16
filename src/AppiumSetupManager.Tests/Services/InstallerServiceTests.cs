@@ -159,6 +159,41 @@ public class InstallerServiceTests
     }
 
     [Fact]
+    public async Task InstallAll_RealisticScan_SkipsJdk21AndAndroidSdkWhenAlreadyPresent()
+    {
+        // Regression test for a real bug: DetectionService reports "JDK" and "ADB" (never "JDK 21"
+        // or "Android SDK" — those are just the catalog's user-facing names), so GetSkipSet's plain
+        // name match could never recognize either as already installed. Every "Install All Missing"
+        // run — and every click of ADB's/JAVA_HOME's "Update"/"Install" button — re-ran the full
+        // brew/winget/apt install command even when nothing needed installing. MockDetection's
+        // helper fabricates catalog-shaped names and would never have caught this, so this test
+        // builds a scan shaped like the real DetectionService output instead.
+        var runner = DefaultRunner();
+        var detection = Substitute.For<IDetectionService>();
+        IReadOnlyList<ComponentStatus> realisticScan = InstallCatalog.All
+            .Where(e => e.ComponentName is not "JDK 21" and not "Android SDK")
+            .Select(e => new ComponentStatus(e.ComponentName, DetectionState.Found, null, null, null, null))
+            .Concat(new[]
+            {
+                new ComponentStatus("JDK", DetectionState.Found, "openjdk 25", null, null, null),
+                new ComponentStatus("ADB", DetectionState.Found, "37.0.0", null, null, null),
+            })
+            .ToList();
+        detection.ScanAllAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(realisticScan));
+
+        var sut = CreateService(runner: runner, detection: detection);
+        var steps = await CollectAsync(sut.InstallAllAsync());
+
+        steps.Where(s => s.ComponentName == "JDK 21").Should().ContainSingle()
+             .Which.State.Should().Be(InstallStepState.Skipped);
+        steps.Where(s => s.ComponentName == "Android SDK").Should().ContainSingle()
+             .Which.State.Should().Be(InstallStepState.Skipped);
+
+        await runner.DidNotReceive().RunAsync("brew", Arg.Is<string>(a => a.Contains("temurin")), Arg.Any<CancellationToken>());
+        await runner.DidNotReceive().RunAsync("brew", Arg.Is<string>(a => a.Contains("android-commandlinetools")), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task InstallAll_AndroidHome_SetAfterSuccess()
     {
         var runner = DefaultRunner();
@@ -172,6 +207,19 @@ public class InstallerServiceTests
             "ANDROID_HOME",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task InstallAll_JdkInstall_TriesToConfigureJavaHomeAfterSuccess()
+    {
+        var runner = DefaultRunner();
+        var envManager = DefaultEnvManager();
+        var detection = MockDetection(("JDK 21", DetectionState.NotFound));
+
+        var sut = CreateService(runner: runner, envManager: envManager, detection: detection);
+        await CollectAsync(sut.InstallAllAsync());
+
+        await envManager.Received(1).TryConfigureJavaHomeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

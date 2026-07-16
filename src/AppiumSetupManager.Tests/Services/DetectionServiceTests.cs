@@ -47,6 +47,10 @@ public class DetectionServiceTests
 
     private static void WireAllInstantMocks(ICommandRunner runner, IPlatformAdapter platform)
     {
+        // brew --version (only called on macOS)
+        runner.RunAsync("brew", "--version", Arg.Any<CancellationToken>())
+              .Returns(OkResult("Homebrew 4.6.10"));
+
         // node --version
         runner.RunAsync("node", "--version", Arg.Any<CancellationToken>())
               .Returns(OkResult("v20.11.0"));
@@ -59,9 +63,11 @@ public class DetectionServiceTests
         runner.RunAsync("java", "-version", Arg.Any<CancellationToken>())
               .Returns(OkResult(stdOut: "", stdErr: "openjdk version \"21.0.3\" 2024-01-16"));
 
-        // adb version
+        // adb version — real output has two "version" lines; the second (capital "V") carries the
+        // actual platform-tools build number, while the first is a frozen protocol version (1.0.41
+        // essentially forever) that must NOT be mistaken for it.
         runner.RunAsync("adb", "version", Arg.Any<CancellationToken>())
-              .Returns(OkResult("Android Debug Bridge version 35.0.2"));
+              .Returns(OkResult("Android Debug Bridge version 1.0.41\nVersion 35.0.2-12147458\nInstalled as /platform-tools/adb"));
 
         // xcodebuild -version (only called on macOS)
         runner.RunAsync("xcodebuild", "-version", Arg.Any<CancellationToken>())
@@ -75,9 +81,11 @@ public class DetectionServiceTests
         runner.RunAsync("appium", "--version", Arg.Any<CancellationToken>())
               .Returns(OkResult("2.5.4"));
 
-        // appium driver list --installed
-        runner.RunAsync("appium", "driver list --installed", Arg.Any<CancellationToken>())
-              .Returns(OkResult("uiautomator2\nxcuitest"));
+        // appium driver list --installed --json
+        runner.RunAsync("appium", "driver list --installed --json", Arg.Any<CancellationToken>())
+              .Returns(OkResult(
+                  "{\"uiautomator2\":{\"version\":\"3.10.0\",\"installed\":true}," +
+                  "\"xcuitest\":{\"version\":\"7.10.1\",\"installed\":true}}"));
     }
 
     // ── Tests ────────────────────────────────────────────────────────────────
@@ -184,19 +192,98 @@ public class DetectionServiceTests
     }
 
     [Fact]
-    public async Task ProbeDrivers_BothPresent()
+    public async Task ProbeAdb_RealWorldOutput_UsesPlatformToolsVersionNotProtocolVersion()
     {
+        // Regression test for a real bug: the frozen "Android Debug Bridge version 1.0.41" protocol
+        // line was being parsed as if it were the platform-tools build version, permanently
+        // misclassifying ADB as Outdated no matter how current it actually was — making the
+        // Dashboard's "Update" button for ADB look like it did nothing, forever.
         var runner = CreateRunner();
-        var platform = MacPlatform();
+        var platform = NonMacPlatform();
         WireAllInstantMocks(runner, platform);
-        runner.RunAsync("appium", "driver list --installed", Arg.Any<CancellationToken>())
-              .Returns(OkResult("uiautomator2\nxcuitest"));
+        runner.RunAsync("adb", "version", Arg.Any<CancellationToken>())
+              .Returns(OkResult("Android Debug Bridge version 1.0.41\nVersion 37.0.0-14910828\nInstalled as /platform-tools/adb"));
 
         var sut = new DetectionService(runner, platform);
         var results = await sut.ScanAllAsync();
 
-        results.Single(r => r.Name == "UiAutomator2 Driver").State.Should().Be(DetectionState.Found);
-        results.Single(r => r.Name == "XCUITest Driver").State.Should().Be(DetectionState.Found);
+        var adb = results.Single(r => r.Name == "ADB");
+        adb.State.Should().Be(DetectionState.Found);
+        adb.InstalledVersion.Should().Be("37.0.0");
+    }
+
+    [Fact]
+    public async Task ProbeAdb_TrulyOldPlatformTools_StillReportsOutdated()
+    {
+        var runner = CreateRunner();
+        var platform = NonMacPlatform();
+        WireAllInstantMocks(runner, platform);
+        runner.RunAsync("adb", "version", Arg.Any<CancellationToken>())
+              .Returns(OkResult("Android Debug Bridge version 1.0.39\nVersion 28.0.2-5326256\nInstalled as /platform-tools/adb"));
+
+        var sut = new DetectionService(runner, platform);
+        var results = await sut.ScanAllAsync();
+
+        var adb = results.Single(r => r.Name == "ADB");
+        adb.State.Should().Be(DetectionState.Outdated);
+    }
+
+    [Fact]
+    public async Task ProbeDrivers_JsonOutput_SurfacesKnownDriversWithVersion()
+    {
+        var runner = CreateRunner();
+        var platform = MacPlatform();
+        WireAllInstantMocks(runner, platform);
+        runner.RunAsync("appium", "driver list --installed --json", Arg.Any<CancellationToken>())
+              .Returns(OkResult(
+                  "{\"uiautomator2\":{\"version\":\"3.10.0\",\"installed\":true}," +
+                  "\"xcuitest\":{\"version\":\"7.10.1\",\"installed\":true}}"));
+
+        var sut = new DetectionService(runner, platform);
+        var results = await sut.ScanAllAsync();
+
+        // Known drivers are reported under their InstallCatalog names.
+        var ua2 = results.Single(r => r.Name == "UiAutomator2 Driver");
+        ua2.State.Should().Be(DetectionState.Found);
+        ua2.InstalledVersion.Should().Be("3.10.0");
+
+        var xcui = results.Single(r => r.Name == "XCUITest Driver");
+        xcui.State.Should().Be(DetectionState.Found);
+        xcui.InstalledVersion.Should().Be("7.10.1");
+    }
+
+    [Fact]
+    public async Task ProbeDrivers_TextOutput_ParsedAsFallback_WithExtraDriver()
+    {
+        var runner = CreateRunner();
+        var platform = NonMacPlatform();
+        WireAllInstantMocks(runner, platform);
+        // Non-JSON (human-readable) output — the text fallback should still extract names/versions.
+        runner.RunAsync("appium", "driver list --installed --json", Arg.Any<CancellationToken>())
+              .Returns(OkResult("- uiautomator2@3.10.0 [installed (npm)]\n- flutter@2.4.1 [installed (npm)]"));
+
+        var sut = new DetectionService(runner, platform);
+        var results = await sut.ScanAllAsync();
+
+        // uiautomator2 is a known driver (catalog name); flutter surfaces dynamically.
+        results.Single(r => r.Name == "UiAutomator2 Driver").InstalledVersion.Should().Be("3.10.0");
+        results.Single(r => r.Name == "flutter driver").InstalledVersion.Should().Be("2.4.1");
+    }
+
+    [Fact]
+    public async Task ProbeDrivers_NoneInstalled_KnownDriversReportedMissing()
+    {
+        var runner = CreateRunner();
+        var platform = MacPlatform();
+        WireAllInstantMocks(runner, platform);
+        runner.RunAsync("appium", "driver list --installed --json", Arg.Any<CancellationToken>())
+              .Returns(OkResult("{}"));
+
+        var sut = new DetectionService(runner, platform);
+        var results = await sut.ScanAllAsync();
+
+        results.Single(r => r.Name == "UiAutomator2 Driver").State.Should().Be(DetectionState.NotFound);
+        results.Single(r => r.Name == "XCUITest Driver").State.Should().Be(DetectionState.NotFound);
     }
 
     [Fact]
@@ -205,14 +292,30 @@ public class DetectionServiceTests
         var runner = CreateRunner();
         var platform = NonMacPlatform();
         WireAllInstantMocks(runner, platform);
-        // Even though the output contains "xcuitest", non-macOS should return NotApplicable.
-        runner.RunAsync("appium", "driver list --installed", Arg.Any<CancellationToken>())
-              .Returns(OkResult("uiautomator2\nxcuitest"));
+        runner.RunAsync("appium", "driver list --installed --json", Arg.Any<CancellationToken>())
+              .Returns(OkResult("{}"));
 
         var sut = new DetectionService(runner, platform);
         var results = await sut.ScanAllAsync();
 
         results.Single(r => r.Name == "XCUITest Driver").State.Should().Be(DetectionState.NotApplicable);
+    }
+
+    [Fact]
+    public async Task ProbeDrivers_AppiumMissing_KnownDriversReportedMissing()
+    {
+        var runner = CreateRunner();
+        var platform = MacPlatform();
+        WireAllInstantMocks(runner, platform);
+        runner.RunAsync("appium", "driver list --installed --json", Arg.Any<CancellationToken>())
+              .Returns(FailResult("command not found: appium"));
+
+        var sut = new DetectionService(runner, platform);
+        var results = await sut.ScanAllAsync();
+
+        // Appium's error output must not be parsed as a driver.
+        results.Should().NotContain(r => r.Name == "command driver");
+        results.Single(r => r.Name == "UiAutomator2 Driver").State.Should().Be(DetectionState.NotFound);
     }
 
     [Fact]
@@ -228,7 +331,31 @@ public class DetectionServiceTests
         var results = await sut.ScanAllAsync();
         stopwatch.Stop();
 
-        results.Should().HaveCount(12);
+        results.Should().HaveCount(13);
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
+    }
+
+    [Fact]
+    public async Task ScanAllAsync_RealCommandRunner_MissingToolDoesNotCrashTheWholeScan()
+    {
+        // Regression test for a real bug: CommandRunner.RunAsync used to let Process.Start()'s
+        // Win32Exception (executable not found) propagate uncaught. Since ScanAllAsync's very first
+        // line fetches the Appium driver list with no try/catch, that meant the *entire* scan blew up
+        // — not just one probe — on any machine missing any of the tools this service probes for,
+        // which is precisely the machine state this app exists to help with. Uses the real
+        // CommandRunner (no mocking) so it actually exercises process-start failure, not a mock that
+        // can't fail. Deliberately does not assert which specific tools are Found/NotFound — that's
+        // real, mutable state on whatever machine runs this suite (e.g. Appium may get installed by
+        // someone using the app between test runs); the invariant under test is only that a missing
+        // tool never crashes the whole scan.
+        var logService = Substitute.For<ILogService>();
+        var runner = new CommandRunner(logService);
+        var platform = NonMacPlatform();
+
+        var sut = new DetectionService(runner, platform);
+
+        var results = await sut.ScanAllAsync();
+
+        results.Should().HaveCount(13);
     }
 }

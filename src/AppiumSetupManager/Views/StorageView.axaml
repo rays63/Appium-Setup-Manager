@@ -5,8 +5,15 @@
              x:Class="AppiumSetupManager.Views.StorageView"
              x:DataType="vm:StorageViewModel">
 
-    <TextBlock Text="{x:Static strings:Strings.StoragePlaceholder}"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="10">
+        <TextBlock Classes="headline-md"
+                   HorizontalAlignment="Center"
+                   Text="{x:Static strings:Strings.NavStorage}" />
+        <TextBlock Classes="body-md muted"
+                   HorizontalAlignment="Center"
+                   Text="{x:Static strings:Strings.StoragePlaceholder}" />
+    </StackPanel>
 
 </UserControl>

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AppiumSetupManager.Core.Infrastructure;
 using AppiumSetupManager.Core.Models;
@@ -27,7 +28,11 @@ public sealed partial class DetectionService : IDetectionService
     [GeneratedRegex(@"version ""(\d+)[._]", RegexOptions.Compiled)]
     private static partial Regex JdkVersionRegex();
 
-    [GeneratedRegex(@"version (\d+)\.(\d+)\.(\d+)", RegexOptions.Compiled)]
+    // `adb version` prints two version lines:
+    //   "Android Debug Bridge version 1.0.41"   — frozen protocol version, not meaningful here
+    //   "Version 37.0.0-14910828"                — the actual platform-tools build version
+    // Anchored to line-start with a capital "V" so it targets the second line specifically.
+    [GeneratedRegex(@"^Version (\d+)\.(\d+)\.(\d+)", RegexOptions.Compiled | RegexOptions.Multiline)]
     private static partial Regex AdbVersionRegex();
 
     [GeneratedRegex(@"Xcode (\d+)\.", RegexOptions.Compiled)]
@@ -35,6 +40,10 @@ public sealed partial class DetectionService : IDetectionService
 
     [GeneratedRegex(@"^(\d+)\.(\d+)\.(\d+)", RegexOptions.Compiled)]
     private static partial Regex AppiumVersionRegex();
+
+    // Appium driver names are bare identifiers, e.g. "uiautomator2", "xcuitest", "flutter".
+    [GeneratedRegex(@"^[a-zA-Z][a-zA-Z0-9._-]*$", RegexOptions.Compiled)]
+    private static partial Regex DriverNameRegex();
 
     // ── Constructor ─────────────────────────────────────────────────────────
 
@@ -52,11 +61,11 @@ public sealed partial class DetectionService : IDetectionService
         probeCts.CancelAfter(TimeSpan.FromSeconds(5));
         var pct = probeCts.Token;
 
-        // Single shared driver list fetch — avoids spawning appium twice.
-        var driverResult = await _runner.RunAsync("appium", "driver list --installed", pct).ConfigureAwait(false);
-        var driverOutput = driverResult.Success ? driverResult.StdOut : string.Empty;
+        // Single shared driver list fetch — --json gives machine-readable names + versions.
+        var driverResult = await _runner.RunAsync("appium", "driver list --installed --json", pct).ConfigureAwait(false);
 
-        var results = await Task.WhenAll(
+        var coreResults = await Task.WhenAll(
+            ProbeHomebrewAsync(pct),
             ProbeNodeAsync(pct),
             ProbeNpmAsync(pct),
             ProbeJdkAsync(pct),
@@ -66,12 +75,13 @@ public sealed partial class DetectionService : IDetectionService
             ProbeXcodeAsync(pct),
             ProbeXcodeCliToolsAsync(pct),
             ProbeAppiumAsync(pct),
-            Task.FromResult(ProbeUiAutomator2(driverOutput)),
-            Task.FromResult(ProbeXcuiTest(driverOutput)),
             ProbeAppiumInspectorAsync(pct)
         ).ConfigureAwait(false);
 
-        return results;
+        // Each installed Appium driver is surfaced as its own component (with version).
+        var drivers = ParseInstalledDrivers(driverResult);
+
+        return [.. coreResults, .. drivers];
     }
 
     // ── Private probes ───────────────────────────────────────────────────────
@@ -190,7 +200,7 @@ public sealed partial class DetectionService : IDetectionService
 
             var state = major >= 34 ? DetectionState.Found : DetectionState.Outdated;
             return new ComponentStatus(name, state, versionStr,
-                state == DetectionState.Outdated ? "34" : null, null, null);
+                state == DetectionState.Outdated ? "34" : null, _platform.LocateExecutable("adb"), null);
         }
         catch (OperationCanceledException)
         {
@@ -267,6 +277,27 @@ public sealed partial class DetectionService : IDetectionService
         }
     }
 
+    private async Task<ComponentStatus> ProbeHomebrewAsync(CancellationToken ct)
+    {
+        const string name = "Homebrew";
+        if (!_platform.IsMacOs)
+            return new ComponentStatus(name, DetectionState.NotApplicable, null, null, null, null);
+
+        try
+        {
+            var result = await _runner.RunAsync("brew", "--version", ct).ConfigureAwait(false);
+            if (result.TimedOut || !result.Success)
+                return NotFound(name);
+
+            var versionLine = result.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            return new ComponentStatus(name, DetectionState.Found, versionLine, null, _platform.LocateExecutable("brew"), null);
+        }
+        catch (OperationCanceledException)
+        {
+            return NotFound(name);
+        }
+    }
+
     private async Task<ComponentStatus> ProbeAppiumAsync(CancellationToken ct)
     {
         const string name = "Appium";
@@ -282,7 +313,7 @@ public sealed partial class DetectionService : IDetectionService
 
             var state = ClassifyVersion(result.StdOut.Trim(), 2);
             return new ComponentStatus(name, state, result.StdOut.Trim(),
-                state == DetectionState.Outdated ? "2" : null, null, null);
+                state == DetectionState.Outdated ? "2" : null, _platform.LocateExecutable("appium"), null);
         }
         catch (OperationCanceledException)
         {
@@ -290,25 +321,138 @@ public sealed partial class DetectionService : IDetectionService
         }
     }
 
-    private ComponentStatus ProbeUiAutomator2(string driverListOutput)
+    // The core drivers we always report on, mapped to their InstallCatalog component names so the
+    // dashboard can offer a one-click install when they are missing. Extra drivers the user has
+    // installed (e.g. flutter, mac2) are still surfaced dynamically alongside these.
+    private static readonly (string CatalogName, string Key, bool MacOnly)[] KnownDrivers =
+    [
+        ("UiAutomator2 Driver", "uiautomator2", false),
+        ("XCUITest Driver",     "xcuitest",     true),
+    ];
+
+    /// <summary>
+    /// Turns the output of <c>appium driver list --installed --json</c> into one
+    /// <see cref="ComponentStatus"/> per driver. The known core drivers are always reported —
+    /// Found (with version), NotFound (so the dashboard can offer an install), or NotApplicable on
+    /// the wrong platform — and any additional installed drivers are appended dynamically. Prefers
+    /// the JSON payload; falls back to line parsing of human-readable output.
+    /// </summary>
+    private IReadOnlyList<ComponentStatus> ParseInstalledDrivers(CommandResult result)
     {
-        const string name = "UiAutomator2 Driver";
-        var found = driverListOutput.Contains("uiautomator2", StringComparison.OrdinalIgnoreCase);
-        return new ComponentStatus(name,
-            found ? DetectionState.Found : DetectionState.NotFound,
-            null, null, null, null);
+        var installed = new Dictionary<string, (string? Version, string? Path)>(StringComparer.OrdinalIgnoreCase);
+
+        // A non-zero exit means Appium is missing or errored — its stderr must not be mistaken for a
+        // driver list, so we leave `installed` empty and report the known drivers as NotFound.
+        if (result.Success && !result.TimedOut)
+        {
+            var combined = string.Join('\n',
+                new[] { result.StdOut, result.StdErr }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+            foreach (var (name, version, path) in ParseDriverEntries(combined))
+                installed[name] = (version, path);
+        }
+
+        var results = new List<ComponentStatus>();
+        var knownKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (catalogName, key, macOnly) in KnownDrivers)
+        {
+            knownKeys.Add(key);
+
+            if (macOnly && !_platform.IsMacOs)
+            {
+                results.Add(new ComponentStatus(catalogName, DetectionState.NotApplicable, null, null, null, null));
+                continue;
+            }
+
+            results.Add(installed.TryGetValue(key, out var info)
+                ? new ComponentStatus(catalogName, DetectionState.Found, info.Version, null, info.Path, null)
+                : new ComponentStatus(catalogName, DetectionState.NotFound, null, null, null, null));
+        }
+
+        // Any additional installed drivers that are not part of the known core set.
+        foreach (var (name, info) in installed)
+        {
+            if (knownKeys.Contains(name))
+                continue;
+            results.Add(new ComponentStatus($"{name} driver", DetectionState.Found, info.Version, null, info.Path, null));
+        }
+
+        return results;
     }
 
-    private ComponentStatus ProbeXcuiTest(string driverListOutput)
-    {
-        const string name = "XCUITest Driver";
-        if (!_platform.IsMacOs)
-            return new ComponentStatus(name, DetectionState.NotApplicable, null, null, null, null);
+    private static IReadOnlyList<(string Name, string? Version, string? Path)> ParseDriverEntries(string output) =>
+        string.IsNullOrWhiteSpace(output)
+            ? []
+            : TryParseJsonDrivers(output) ?? ParseTextDrivers(output);
 
-        var found = driverListOutput.Contains("xcuitest", StringComparison.OrdinalIgnoreCase);
-        return new ComponentStatus(name,
-            found ? DetectionState.Found : DetectionState.NotFound,
-            null, null, null, null);
+    private static List<(string Name, string? Version, string? Path)>? TryParseJsonDrivers(string output)
+    {
+        // Isolate the JSON object in case Appium prepends log noise to the line.
+        var start = output.IndexOf('{');
+        var end = output.LastIndexOf('}');
+        if (start < 0 || end <= start)
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(output[start..(end + 1)]);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                return null;
+
+            var list = new List<(string, string?, string?)>();
+            foreach (var driver in doc.RootElement.EnumerateObject())
+            {
+                string? version = null;
+                string? installPath = null;
+                if (driver.Value.ValueKind == JsonValueKind.Object)
+                {
+                    if (driver.Value.TryGetProperty("version", out var v) && v.ValueKind == JsonValueKind.String)
+                        version = v.GetString();
+                    if (driver.Value.TryGetProperty("installPath", out var p) && p.ValueKind == JsonValueKind.String)
+                        installPath = p.GetString();
+                }
+
+                list.Add((driver.Name, version, installPath));
+            }
+
+            return list;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static List<(string Name, string? Version, string? Path)> ParseTextDrivers(string output)
+    {
+        var list = new List<(string, string?, string?)>();
+        foreach (var raw in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            // Strip list bullets / status glyphs Appium prefixes each entry with.
+            var line = raw.Trim().TrimStart('-', '*', '•', '✔', '✓', ' ', '\t').Trim();
+            if (line.Length == 0 || line.Contains("Listing", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // First token looks like "uiautomator2@3.10.0" or just "uiautomator2".
+            var token = line.Split([' ', '\t', '['], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } parts
+                ? parts[0]
+                : string.Empty;
+            if (token.Length == 0)
+                continue;
+
+            var at = token.IndexOf('@');
+            var name = at > 0 ? token[..at] : token;
+            var version = at > 0 ? token[(at + 1)..] : null;
+
+            // Guard against decorative lines slipping through: driver names are bare identifiers.
+            if (!DriverNameRegex().IsMatch(name))
+                continue;
+
+            list.Add((name, version, null));
+        }
+
+        return list;
     }
 
     private async Task<ComponentStatus> ProbeAppiumInspectorAsync(CancellationToken ct)

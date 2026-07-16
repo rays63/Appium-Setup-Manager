@@ -1,0 +1,75 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Midnight Slate — color palette
+         Colors first, then brushes that reference them.
+         ============================================================ -->
+
+    <!-- Surfaces -->
+    <Color x:Key="SurfaceColor">#0b1326</Color>
+    <Color x:Key="SurfaceContainerLowestColor">#060e20</Color>
+    <Color x:Key="SurfaceContainerLowColor">#131b2e</Color>
+    <Color x:Key="SurfaceContainerColor">#171f33</Color>
+    <Color x:Key="SurfaceContainerHighColor">#222a3d</Color>
+    <Color x:Key="SurfaceContainerHighestColor">#2d3449</Color>
+    <Color x:Key="SurfaceBrightColor">#31394d</Color>
+
+    <!-- Text / lines -->
+    <Color x:Key="OnSurfaceColor">#dae2fd</Color>
+    <Color x:Key="OnSurfaceVariantColor">#bec7d4</Color>
+    <Color x:Key="OutlineColor">#88919d</Color>
+    <Color x:Key="OutlineVariantColor">#3f4852</Color>
+
+    <!-- Accents -->
+    <Color x:Key="PrimaryColor">#98cbff</Color>
+    <Color x:Key="PrimaryContainerColor">#00a3ff</Color>
+    <Color x:Key="OnPrimaryColor">#003354</Color>
+    <Color x:Key="SecondaryColor">#4edea3</Color>
+    <Color x:Key="OnSecondaryColor">#003824</Color>
+    <Color x:Key="TertiaryColor">#ffb95f</Color>
+    <Color x:Key="ErrorColor">#ffb4ab</Color>
+
+    <!-- ============================================================
+         Brushes
+         ============================================================ -->
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="SurfaceContainerLowestBrush" Color="{StaticResource SurfaceContainerLowestColor}" />
+    <SolidColorBrush x:Key="SurfaceContainerLowBrush" Color="{StaticResource SurfaceContainerLowColor}" />
+    <SolidColorBrush x:Key="SurfaceContainerBrush" Color="{StaticResource SurfaceContainerColor}" />
+    <SolidColorBrush x:Key="SurfaceContainerHighBrush" Color="{StaticResource SurfaceContainerHighColor}" />
+    <SolidColorBrush x:Key="SurfaceContainerHighestBrush" Color="{StaticResource SurfaceContainerHighestColor}" />
+    <SolidColorBrush x:Key="SurfaceBrightBrush" Color="{StaticResource SurfaceBrightColor}" />
+
+    <SolidColorBrush x:Key="OnSurfaceBrush" Color="{StaticResource OnSurfaceColor}" />
+    <SolidColorBrush x:Key="OnSurfaceVariantBrush" Color="{StaticResource OnSurfaceVariantColor}" />
+    <SolidColorBrush x:Key="OutlineBrush" Color="{StaticResource OutlineColor}" />
+    <SolidColorBrush x:Key="OutlineVariantBrush" Color="{StaticResource OutlineVariantColor}" />
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="PrimaryContainerBrush" Color="{StaticResource PrimaryContainerColor}" />
+    <SolidColorBrush x:Key="PrimaryContainerHoverBrush" Color="#33b5ff" />
+    <SolidColorBrush x:Key="PrimaryContainerPressedBrush" Color="#0089d6" />
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}" />
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}" />
+    <SolidColorBrush x:Key="OnSecondaryBrush" Color="{StaticResource OnSecondaryColor}" />
+    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource TertiaryColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+
+    <!-- Sidebar background (darkest slate) -->
+    <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SurfaceContainerLowestColor}" />
+
+    <!-- Active nav tint (subtle azure wash) -->
+    <SolidColorBrush x:Key="NavActiveTintBrush" Color="#1f00a3ff" />
+
+    <!-- Status pill tints (low-opacity accent background) -->
+    <SolidColorBrush x:Key="PillInstalledBackgroundBrush" Color="#244edea3" />
+    <SolidColorBrush x:Key="PillInstalledForegroundBrush" Color="{StaticResource SecondaryColor}" />
+    <SolidColorBrush x:Key="PillWarnBackgroundBrush" Color="#24ffb95f" />
+    <SolidColorBrush x:Key="PillWarnForegroundBrush" Color="{StaticResource TertiaryColor}" />
+    <SolidColorBrush x:Key="PillErrorBackgroundBrush" Color="#24ffb4ab" />
+    <SolidColorBrush x:Key="PillErrorForegroundBrush" Color="{StaticResource ErrorColor}" />
+    <SolidColorBrush x:Key="PillInfoBackgroundBrush" Color="#2400a3ff" />
+    <SolidColorBrush x:Key="PillInfoForegroundBrush" Color="{StaticResource PrimaryColor}" />
+
+</ResourceDictionary>

@@ -22,9 +22,11 @@ public partial class App : Application
             var runner     = new CommandRunner(logService);
             var envManager = new EnvironmentVariableManager(platform);
             var detection  = new DetectionService(runner, platform);
-            var installer  = new InstallerService(runner, platform, envManager, detection);
-            var installVm  = new InstallViewModel(installer);
-            var mainVm     = new MainWindowViewModel(logService, detection, installVm);
+            var installer   = new InstallerService(runner, platform, envManager, detection);
+            var installVm   = new InstallViewModel(installer, detection);
+            var doctorService = new DoctorService(runner, platform);
+            var doctorVm    = new DoctorViewModel(doctorService);
+            var mainVm      = new MainWindowViewModel(logService, detection, installer, platform, envManager, installVm, doctorVm);
 
             desktop.MainWindow = new MainWindow { DataContext = mainVm };
 
@@ -32,6 +34,7 @@ public partial class App : Application
             {
                 mainVm.CommandLog.Shutdown();
                 installVm.Dispose();
+                doctorVm.Dispose();
                 logService.Dispose();
             };
         }
