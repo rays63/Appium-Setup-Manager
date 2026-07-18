@@ -76,25 +76,18 @@
                                           IsChecked="{Binding NotifyOnCompletion, Mode=TwoWay}"
                                           AutomationProperties.Name="{x:Static strings:Strings.SettingsNotifyCompletionLabel}" />
                         </Grid>
-                        <Border Classes="divider" />
 
-                        <!-- Anonymous Usage Data -->
-                        <Grid ColumnDefinitions="*,Auto" Margin="0,8">
-                            <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,24,0" VerticalAlignment="Center">
-                                <TextBlock Classes="body-sm"
-                                           FontWeight="SemiBold"
-                                           Text="{x:Static strings:Strings.SettingsUsageDataLabel}" />
-                                <TextBlock Classes="body-sm muted"
-                                           TextWrapping="Wrap"
-                                           Text="{x:Static strings:Strings.SettingsUsageDataDescription}" />
-                            </StackPanel>
-                            <ToggleSwitch Grid.Column="1"
-                                          VerticalAlignment="Center"
-                                          OnContent="{x:Null}" OffContent="{x:Null}"
-                                          IsChecked="{Binding AnonymousUsageData, Mode=TwoWay}"
-                                          AutomationProperties.Name="{x:Static strings:Strings.SettingsUsageDataLabel}" />
-                        </Grid>
+                    </StackPanel>
+                </Border>
 
+                <!-- ================= Privacy note ================= -->
+                <Border Classes="card" Padding="24,20">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="headline-sm"
+                                   Text="{x:Static strings:Strings.SettingsCardPrivacy}" />
+                        <TextBlock Classes="body-sm muted"
+                                   TextWrapping="Wrap"
+                                   Text="{x:Static strings:Strings.SettingsPrivacyNote}" />
                     </StackPanel>
                 </Border>
 

@@ -180,6 +180,20 @@ public static class Strings
     public const string EnvironmentDaysAgoFormat         = "{0}d ago";
     public const string EnvironmentTimeReasonFormat      = "{0} · {1}";
 
+    // ── R2 step 4 — PATH Entries card ───────────────────────────────────────────
+    public const string EnvironmentPathSectionTitle         = "Add to PATH";
+    public const string EnvironmentPathCaption              = "Entries added here are appended to your shell profile. Existing entries can't be removed from this app.";
+    public const string EnvironmentPathWatermark            = "/usr/local/bin — directory to add";
+    public const string EnvironmentPathDirectoryFieldName   = "Directory to add to PATH";
+    public const string EnvironmentPathBrowse               = "Browse…";
+    public const string EnvironmentPathBrowseDialogTitle    = "Choose a directory to add to PATH";
+    public const string EnvironmentPathAdd                  = "Add to PATH";
+    public const string EnvironmentPathErrorNotAbsolute     = "Enter an absolute path.";
+    public const string EnvironmentPathErrorMissingFolder   = "That folder doesn't exist.";
+    public const string EnvironmentPathErrorAlreadyPresent  = "Already in PATH.";
+    public const string EnvironmentPathAddedSuccess         = "Added to PATH — new terminals will pick it up automatically.";
+    public const string EnvironmentPathAddedHistoryFormat   = "Added {0} to PATH";
+
     // ── Visual Redesign R1 step 4 — Updates screen ──────────────────────────────
     public const string UpdatesTitle                    = "Updates";
     public const string UpdatesStatusUpToDate           = "Up to date";
@@ -235,8 +249,8 @@ public static class Strings
     public const string SettingsNotifyFailureDescription    = "Show a notification when an install or repair fails.";
     public const string SettingsNotifyCompletionLabel       = "Notify on Completion";
     public const string SettingsNotifyCompletionDescription = "Show a notification when an install or update finishes successfully.";
-    public const string SettingsUsageDataLabel              = "Anonymous Usage Data";
-    public const string SettingsUsageDataDescription        = "Share anonymized usage statistics to help improve the app.";
+    public const string SettingsCardPrivacy                 = "Privacy";
+    public const string SettingsPrivacyNote                 = "Everything this app records — settings, install history, environment backups and logs — is stored locally on this machine and is never sent anywhere. The only network access is checking npm for updates (which you can turn off above) and downloading the installs you request.";
 
     // Card 2 — Keyboard Shortcuts
     public const string SettingsCardShortcuts = "Keyboard Shortcuts";

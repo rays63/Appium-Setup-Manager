@@ -6,10 +6,11 @@ using AppiumSetupManager.Localization;
 namespace AppiumSetupManager.ViewModels;
 
 /// <summary>
-/// Backs the Settings screen: four persisted preference toggles (write-through to
+/// Backs the Settings screen: three persisted preference toggles (write-through to
 /// <see cref="ISettingsStore"/> on every change) plus a read-only, platform-aware list of
 /// keyboard shortcuts. The theme preference is deliberately not exposed here — the top-bar
-/// toggle owns it via ThemeService/SettingsThemePreferenceStore.
+/// toggle owns it via ThemeService/SettingsThemePreferenceStore. No telemetry of any kind
+/// exists; everything the app records stays in local files (see the Privacy card).
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
@@ -24,9 +25,6 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _notifyOnCompletion;
 
-    [ObservableProperty]
-    private bool _anonymousUsageData;
-
     public IReadOnlyList<ShortcutRowViewModel> Shortcuts { get; }
 
     public SettingsViewModel(ISettingsStore settings, IPlatformAdapter platform)
@@ -37,7 +35,6 @@ public partial class SettingsViewModel : ObservableObject
         _automaticUpdateChecks = current.AutomaticUpdateChecks;
         _notifyOnFailure       = current.NotifyOnFailure;
         _notifyOnCompletion    = current.NotifyOnCompletion;
-        _anonymousUsageData    = current.AnonymousUsageData;
 
         Shortcuts = platform.IsMacOs
             ?
@@ -66,7 +63,4 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnNotifyOnCompletionChanged(bool value) =>
         _settings.Update(s => s with { NotifyOnCompletion = value });
-
-    partial void OnAnonymousUsageDataChanged(bool value) =>
-        _settings.Update(s => s with { AnonymousUsageData = value });
 }

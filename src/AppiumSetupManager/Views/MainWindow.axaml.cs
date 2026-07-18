@@ -191,10 +191,15 @@ public partial class MainWindow : Window
             if (logRow.Height.IsAbsolute)
                 _expandedLogHeight = logRow.Height.Value;
 
+            // MinHeight guards splitter-dragging while expanded, but when collapsed it would
+            // hold the row at 120px — an empty band below the header. Lift it so Auto can
+            // shrink the row to exactly the header's height.
+            logRow.MinHeight = 0;
             logRow.Height = GridLength.Auto;
         }
         else
         {
+            logRow.MinHeight = 120;
             logRow.Height = new GridLength(_expandedLogHeight, GridUnitType.Pixel);
         }
 

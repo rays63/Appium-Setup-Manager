@@ -36,7 +36,28 @@ public partial class EnvironmentViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isSaving;
 
+    [ObservableProperty]
+    private string _newPathDirectory = string.Empty;
+
+    [ObservableProperty]
+    private bool _isAddingToPath;
+
+    /// <summary>Inline feedback line for the PATH card — validation errors and the success note.</summary>
+    [ObservableProperty]
+    private string? _pathMessage;
+
+    [ObservableProperty]
+    private bool _isPathMessageError;
+
     public bool HasBackupEntries => BackupEntries.Count > 0;
+
+    /// <summary>
+    /// Folder picker supplied by the view (EnvironmentView code-behind), which owns the
+    /// TopLevel/StorageProvider access this ViewModel must not take a dependency on. Returns the
+    /// picked folder's local path, or null when the user cancels — same delegate pattern as
+    /// CommandLogViewModel.SaveFilePickerAsync.
+    /// </summary>
+    public Func<Task<string?>>? FolderPickerAsync { get; set; }
 
     public EnvironmentViewModel(IDetectionService detection, IEnvironmentVariableManager envManager, IEnvironmentBackupStore backupStore, IHistoryService history)
     {
@@ -86,6 +107,86 @@ public partial class EnvironmentViewModel : ObservableObject, IDisposable
 
         await LoadAsync();
     }
+
+    partial void OnNewPathDirectoryChanged(string value) => AddToPathCommand.NotifyCanExecuteChanged();
+
+    partial void OnIsAddingToPathChanged(bool value) => AddToPathCommand.NotifyCanExecuteChanged();
+
+    private bool CanAddToPath() => !IsAddingToPath && !string.IsNullOrWhiteSpace(NewPathDirectory);
+
+    /// <summary>
+    /// Opens the view-supplied folder picker and fills the directory TextBox with the result.
+    /// </summary>
+    [RelayCommand]
+    private async Task BrowseForPathDirectoryAsync()
+    {
+        if (FolderPickerAsync is null)
+            return; // No view attached (e.g. during teardown) — nothing to pick with.
+
+        var folder = await FolderPickerAsync();
+        if (folder is not null)
+            NewPathDirectory = folder;
+    }
+
+    /// <summary>
+    /// Validates the typed directory (absolute, exists, not already present) and appends it to PATH
+    /// via the Core manager. Deliberately records the history entry with *no* rollback target: PATH
+    /// rollback through the backup mechanism would restore a frozen literal PATH value, which is
+    /// worse than the append it undoes.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanAddToPath))]
+    private async Task AddToPathAsync()
+    {
+        var directory = NewPathDirectory.Trim();
+
+        if (!Path.IsPathRooted(directory))
+        {
+            ShowPathMessage(Strings.EnvironmentPathErrorNotAbsolute, isError: true);
+            return;
+        }
+
+        // Be strict: a typo'd PATH entry is pure pollution, so refuse to persist one.
+        if (!Directory.Exists(directory))
+        {
+            ShowPathMessage(Strings.EnvironmentPathErrorMissingFolder, isError: true);
+            return;
+        }
+
+        if (SplitCurrentPath().Contains(directory, StringComparer.Ordinal))
+        {
+            ShowPathMessage(Strings.EnvironmentPathErrorAlreadyPresent, isError: true);
+            return;
+        }
+
+        IsAddingToPath = true;
+        try
+        {
+            await _envManager.AppendToPathAsync(directory);
+
+            try { await _history.RecordAsync(HistoryEntryType.Setup, string.Format(Strings.EnvironmentPathAddedHistoryFormat, directory), directory); }
+            catch { /* swallow — non-fatal history-write failure */ }
+
+            ShowPathMessage(Strings.EnvironmentPathAddedSuccess, isError: false);
+            NewPathDirectory = string.Empty;
+        }
+        finally
+        {
+            IsAddingToPath = false;
+        }
+    }
+
+    private void ShowPathMessage(string message, bool isError)
+    {
+        PathMessage = message;
+        IsPathMessageError = isError;
+    }
+
+    // Used only for the duplicate check when adding — the entries themselves aren't displayed.
+    private IReadOnlyList<string> SplitCurrentPath() =>
+        (_envManager.Get("PATH") ?? string.Empty)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
     /// <summary>
     /// The callback handed to every EnvironmentBackupEntryViewModel. Records the variable's *current*

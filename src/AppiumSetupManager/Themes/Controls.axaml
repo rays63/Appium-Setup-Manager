@@ -364,4 +364,16 @@
         <Setter Property="Background" Value="{DynamicResource OutlineVariantBrush}" />
     </Style>
 
+    <!-- ============================================================
+         Inline feedback line inside a card — success/info by default,
+         switched to the error tone via the conditional `error` class
+         (e.g. Environment screen's PATH Entries validation messages).
+         ============================================================ -->
+    <Style Selector="TextBlock.feedback">
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.feedback.error">
+        <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+    </Style>
+
 </Styles>

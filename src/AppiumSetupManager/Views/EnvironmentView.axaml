@@ -59,6 +59,48 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= PATH Entries ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="14">
+                    <TextBlock Classes="body-md" FontWeight="SemiBold"
+                               Text="{x:Static strings:Strings.EnvironmentPathSectionTitle}" />
+
+                    <TextBlock Classes="body-sm muted"
+                               TextWrapping="Wrap"
+                               Text="{x:Static strings:Strings.EnvironmentPathCaption}" />
+
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBox Grid.Column="0"
+                                 Classes="mono"
+                                 Watermark="{x:Static strings:Strings.EnvironmentPathWatermark}"
+                                 Text="{Binding NewPathDirectory, Mode=TwoWay}"
+                                 AutomationProperties.Name="{x:Static strings:Strings.EnvironmentPathDirectoryFieldName}" />
+                        <Button Grid.Column="1"
+                                Classes="secondary"
+                                Margin="10,0,0,0"
+                                Command="{Binding BrowseForPathDirectoryCommand}"
+                                Content="{x:Static strings:Strings.EnvironmentPathBrowse}"
+                                AutomationProperties.Name="{x:Static strings:Strings.EnvironmentPathBrowse}" />
+                        <Button Grid.Column="2"
+                                Classes="primary"
+                                Margin="10,0,0,0"
+                                Command="{Binding AddToPathCommand}"
+                                AutomationProperties.Name="{x:Static strings:Strings.EnvironmentPathAdd}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Classes="spinner" Text="⟳" IsVisible="{Binding IsAddingToPath}" />
+                                <TextBlock Text="{x:Static strings:Strings.EnvironmentPathAdd}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <TextBlock Classes="body-sm feedback"
+                               Classes.error="{Binding IsPathMessageError}"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding PathMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                               Text="{Binding PathMessage}" />
+                </StackPanel>
+            </Border>
+
             <!-- ================= Toolchain Locations ================= -->
             <Border Classes="card">
                 <StackPanel Spacing="14">

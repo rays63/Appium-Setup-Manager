@@ -35,7 +35,6 @@ public class SettingsStoreTests : IDisposable
         sut.Current.AutomaticUpdateChecks.Should().BeTrue();
         sut.Current.NotifyOnFailure.Should().BeTrue();
         sut.Current.NotifyOnCompletion.Should().BeTrue();
-        sut.Current.AnonymousUsageData.Should().BeFalse();
     }
 
     [Fact]
@@ -62,12 +61,12 @@ public class SettingsStoreTests : IDisposable
     public void Update_ThenReloadInFreshStore_RoundTripsPersistedValues()
     {
         var writer = new SettingsStore(_platform);
-        writer.Update(s => s with { Theme = AppThemeMode.Light, AnonymousUsageData = true });
+        writer.Update(s => s with { Theme = AppThemeMode.Light, NotifyOnFailure = false });
 
         var reader = new SettingsStore(_platform);
 
         reader.Current.Theme.Should().Be(AppThemeMode.Light);
-        reader.Current.AnonymousUsageData.Should().BeTrue();
+        reader.Current.NotifyOnFailure.Should().BeFalse();
     }
 
     [Fact]
@@ -93,7 +92,6 @@ public class SettingsStoreTests : IDisposable
         reloaded.Current.Theme.Should().Be(AppThemeMode.Light);
         reloaded.Current.AutomaticUpdateChecks.Should().BeTrue("defaults must survive unrelated updates");
         reloaded.Current.NotifyOnFailure.Should().BeTrue();
-        reloaded.Current.AnonymousUsageData.Should().BeFalse();
     }
 
     [Fact]

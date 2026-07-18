@@ -13,6 +13,8 @@ public enum AppThemeMode { Dark, Light }
 /// <summary>
 /// The full set of user preferences persisted to settings.json. Immutable — mutate via
 /// <c>record with</c> expressions through ISettingsStore.Update.
+/// No telemetry setting exists by design: the app collects nothing, so there is nothing to
+/// toggle — all recorded data (settings, history, backups, logs) stays in local files.
 /// </summary>
 public sealed record AppSettings
 {
@@ -20,5 +22,4 @@ public sealed record AppSettings
     public bool AutomaticUpdateChecks { get; init; } = true;
     public bool NotifyOnFailure { get; init; } = true;
     public bool NotifyOnCompletion { get; init; } = true;
-    public bool AnonymousUsageData { get; init; } = false;
 }
