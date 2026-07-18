@@ -1,0 +1,55 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Visual Redesign R1 — outline icon set (Lucide-inspired, stroke-width-2.75
+         rounded style). Each entry is a StreamGeometry drawn on a 24x24 canvas,
+         meant to be hosted by a stroke-only Path (Fill="Transparent"), not the
+         fill-based PathIcon control:
+
+           <Path Stroke="{DynamicResource OnSurfaceVariantBrush}"
+                 StrokeThickness="2.75"
+                 StrokeLineCap="Round"
+                 StrokeJoin="Round"
+                 Fill="Transparent"
+                 Width="17" Height="17"
+                 Stretch="Uniform"
+                 Data="{StaticResource IconDashboard}" />
+
+         Geometry was hand-drawn to Lucide's silhouettes rather than sourced from
+         the original SVGs — prioritizes recognizable shape over path-for-path
+         fidelity (see engineering report).
+         ============================================================ -->
+
+    <!-- Sidebar navigation -->
+    <StreamGeometry x:Key="IconDashboard">M4,4 L10,4 L10,10 L4,10 Z M14,4 L20,4 L20,10 L14,10 Z M4,14 L10,14 L10,20 L4,20 Z M14,14 L20,14 L20,20 L14,20 Z</StreamGeometry>
+
+    <StreamGeometry x:Key="IconInstallation">M12,3 L12,14 M7,9 L12,14 L17,9 M4,16 L4,20 L20,20 L20,16</StreamGeometry>
+
+    <StreamGeometry x:Key="IconDoctor">M3,12 L7,12 L9,5 L13,19 L15,12 L21,12</StreamGeometry>
+
+    <StreamGeometry x:Key="IconEnvironment">M3,6 L21,6 M8,3 L8,9 M3,12 L21,12 M14,9 L14,15 M3,18 L21,18 M6,15 L6,21</StreamGeometry>
+
+    <StreamGeometry x:Key="IconStorage">M3,20 L21,20 M6,20 L6,10 M12,20 L12,4 M18,20 L18,14</StreamGeometry>
+
+    <StreamGeometry x:Key="IconUpdates">M20,11 A8,8 0 1 0 19.75,14.5 M20,4 L20,11 L13,11</StreamGeometry>
+
+    <StreamGeometry x:Key="IconHistory">M12,3 A9,9 0 1 0 12.01,3 M12,7 L12,12 L16,14</StreamGeometry>
+
+    <StreamGeometry x:Key="IconLogs">M4,6 L20,6 M4,12 L20,12 M4,18 L20,18</StreamGeometry>
+
+    <StreamGeometry x:Key="IconSettings">M9,12 A3,3 0 1 0 9.01,12 M19,12 L21.5,12 M16.95,16.95 L18.72,18.72 M12,19 L12,21.5 M7.05,16.95 L5.28,18.72 M5,12 L2.5,12 M7.05,7.05 L5.28,5.28 M12,5 L12,2.5 M16.95,7.05 L18.72,5.28</StreamGeometry>
+
+    <!-- Top bar -->
+    <StreamGeometry x:Key="IconSearch">M11,4 A7,7 0 1 0 11.01,4 M16,16 L21,21</StreamGeometry>
+
+    <StreamGeometry x:Key="IconSun">M12,8 A4,4 0 1 0 12.01,8 M18,12 L21,12 M16.24,16.24 L18.36,18.36 M12,18 L12,21 M7.76,16.24 L5.64,18.36 M6,12 L3,12 M7.76,7.76 L5.64,5.64 M12,6 L12,3 M16.24,7.76 L18.36,5.64</StreamGeometry>
+
+    <StreamGeometry x:Key="IconMoon">M12,3 A6,6 0 0 0 21,12 A9,9 0 1 1 12,3 Z</StreamGeometry>
+
+    <!-- Same silhouette as IconSettings — kept as a distinct key so the top-bar
+         settings button and the sidebar Settings nav row can be themed/replaced
+         independently later without touching each other. -->
+    <StreamGeometry x:Key="IconGear">M9,12 A3,3 0 1 0 9.01,12 M19,12 L21.5,12 M16.95,16.95 L18.72,18.72 M12,19 L12,21.5 M7.05,16.95 L5.28,18.72 M5,12 L2.5,12 M7.05,7.05 L5.28,5.28 M12,5 L12,2.5 M16.95,7.05 L18.72,5.28</StreamGeometry>
+
+</ResourceDictionary>

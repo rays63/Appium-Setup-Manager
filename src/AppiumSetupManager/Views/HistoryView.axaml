@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:converters="using:AppiumSetupManager.Converters"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+
+    <DockPanel>
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="headline-md" Text="{x:Static strings:Strings.HistoryTitle}" />
+            <TextBlock Classes="body-sm muted" Text="{x:Static strings:Strings.HistorySubtitle}" />
+        </StackPanel>
+
+        <ProgressBar DockPanel.Dock="Top"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     Margin="0,0,0,16" />
+
+        <ScrollViewer>
+            <StackPanel Spacing="8">
+
+                <!-- ================= Day groups ================= -->
+                <ItemsControl ItemsSource="{Binding DayGroups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:HistoryDayGroupViewModel">
+                            <StackPanel Spacing="8" Margin="0,0,0,16">
+
+                                <TextBlock Classes="label-caps muted"
+                                           Margin="4,0,0,0"
+                                           Text="{Binding DayLabel, Converter={x:Static converters:ToUpperConverter.Instance}}" />
+
+                                <Border Classes="card">
+                                    <ItemsControl ItemsSource="{Binding Entries}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:HistoryEntryViewModel">
+                                                <StackPanel>
+                                                    <Grid ColumnDefinitions="76,Auto,*,Auto" Margin="0,10">
+
+                                                        <!-- Time — fixed-width column, muted -->
+                                                        <TextBlock Grid.Column="0"
+                                                                   Classes="mono muted"
+                                                                   VerticalAlignment="Center"
+                                                                   Text="{Binding TimeText}" />
+
+                                                        <!-- Outlined type tag -->
+                                                        <Border Grid.Column="1"
+                                                                Classes="tag-outline"
+                                                                Margin="0,0,12,0">
+                                                            <TextBlock Text="{Binding TypeTagText}" />
+                                                        </Border>
+
+                                                        <!-- Title + optional summary -->
+                                                        <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock Classes="body-sm"
+                                                                       FontWeight="SemiBold"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip.Tip="{Binding Title}"
+                                                                       Text="{Binding Title}" />
+                                                            <TextBlock Classes="body-sm muted"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip.Tip="{Binding Summary}"
+                                                                       Text="{Binding Summary}"
+                                                                       IsVisible="{Binding HasSummary}" />
+                                                        </StackPanel>
+
+                                                        <!-- Rollback — ONLY on rollback-capable Setup rows -->
+                                                        <Button Grid.Column="3"
+                                                                Classes="secondary"
+                                                                VerticalAlignment="Center"
+                                                                Margin="12,0,0,0"
+                                                                IsVisible="{Binding IsRollbackCapable}"
+                                                                IsEnabled="{Binding !IsRestoring}"
+                                                                Command="{Binding RollbackCommand}"
+                                                                AutomationProperties.Name="{Binding Title, StringFormat={x:Static strings:Strings.HistoryRollbackFormat}}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <TextBlock Classes="spinner" Text="⟳" IsVisible="{Binding IsRestoring}" />
+                                                                <TextBlock Text="{x:Static strings:Strings.HistoryRollback}" />
+                                                            </StackPanel>
+                                                        </Button>
+
+                                                    </Grid>
+                                                    <Border Classes="divider" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- ================= Empty state — only once loading has finished with no
+                     entries; distinct from the IsLoading progress bar above. ================= -->
+                <Border IsVisible="{Binding !IsLoading}">
+                    <Border Classes="card" IsVisible="{Binding !HasEntries}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center" Margin="0,20">
+                            <TextBlock Classes="headline-sm"
+                                       HorizontalAlignment="Center"
+                                       Text="{x:Static strings:Strings.HistoryEmptyTitle}" />
+                            <TextBlock Classes="body-sm muted"
+                                       HorizontalAlignment="Center"
+                                       MaxWidth="420"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       Text="{x:Static strings:Strings.HistoryEmptyBody}" />
+                        </StackPanel>
+                    </Border>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
+
+</UserControl>

@@ -1,0 +1,217 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Organic (sage accent) — color palette
+         Visual Redesign R1: a custom sage/green accent override of Anthropic's
+         "Organic" design system, replacing the previous "Midnight Slate" palette.
+
+         Values are split into Dark / Light ResourceDictionary.ThemeDictionaries
+         children so every DynamicResource lookup already used throughout the app
+         repaints automatically when Application.RequestedThemeVariant changes
+         (see Services/ThemeService.cs) — no changes needed in consuming XAML.
+
+         Every brush key name from the previous palette is preserved; only the
+         underlying color values change, so the not-yet-reskinned screens
+         (Dashboard / Install / Doctor / Storage) keep working unchanged until
+         their own later pass.
+
+         Source palette:
+           accent-100 #E6F2DD · accent-300 #B1D3B9 · accent-500 #88BDA4
+           accent-600 #659287 (base) · accent-700 #51756C (accent-600 + 20% black)
+           accent-800 #425F58 (accent-600 + 35% black) · accent-900 #334944 (accent-600 + 50% black)
+         ============================================================ -->
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ============================================================
+             Dark theme
+             background = accent-600 mixed 22% into black
+             "surface"  = accent-600 mixed 32% into black (the sunken/recessed tone —
+                          used for SurfaceContainerLowest, i.e. the sidebar + command log)
+             The rest of the SurfaceContainer* ramp fills in between/above those two
+             anchors using the same monotonic lightening pattern the previous
+             Midnight Slate ramp used (Lowest darkest → Bright lightest).
+             ============================================================ -->
+        <ResourceDictionary x:Key="Dark">
+
+            <!-- Surfaces -->
+            <Color x:Key="SurfaceColor">#4F7269</Color>
+            <Color x:Key="SurfaceContainerLowestColor">#45635C</Color>
+            <Color x:Key="SurfaceContainerLowColor">#53786F</Color>
+            <Color x:Key="SurfaceContainerColor">#577E74</Color>
+            <Color x:Key="SurfaceContainerHighColor">#5B837A</Color>
+            <Color x:Key="SurfaceContainerHighestColor">#5F897F</Color>
+            <Color x:Key="SurfaceBrightColor">#638F84</Color>
+
+            <!-- Text / lines -->
+            <Color x:Key="OnSurfaceColor">#E6F2DD</Color>
+            <Color x:Key="OnSurfaceVariantColor">#B1D3B9</Color>
+            <Color x:Key="OutlineColor">#88BDA4</Color>
+            <Color x:Key="OutlineVariantColor">#51756C</Color>
+
+            <!-- Accents -->
+            <Color x:Key="PrimaryColor">#B1D3B9</Color>
+            <Color x:Key="PrimaryContainerColor">#659287</Color>
+            <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
+            <Color x:Key="SecondaryColor">#88BDA4</Color>
+            <Color x:Key="OnSecondaryColor">#17261F</Color>
+            <Color x:Key="TertiaryColor">#D9A566</Color>
+            <Color x:Key="ErrorColor">#D89A86</Color>
+
+            <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerLowestBrush" Color="{StaticResource SurfaceContainerLowestColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerLowBrush" Color="{StaticResource SurfaceContainerLowColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerBrush" Color="{StaticResource SurfaceContainerColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerHighBrush" Color="{StaticResource SurfaceContainerHighColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerHighestBrush" Color="{StaticResource SurfaceContainerHighestColor}" />
+            <SolidColorBrush x:Key="SurfaceBrightBrush" Color="{StaticResource SurfaceBrightColor}" />
+
+            <SolidColorBrush x:Key="OnSurfaceBrush" Color="{StaticResource OnSurfaceColor}" />
+            <SolidColorBrush x:Key="OnSurfaceVariantBrush" Color="{StaticResource OnSurfaceVariantColor}" />
+            <SolidColorBrush x:Key="OutlineBrush" Color="{StaticResource OutlineColor}" />
+            <SolidColorBrush x:Key="OutlineVariantBrush" Color="{StaticResource OutlineVariantColor}" />
+
+            <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+            <SolidColorBrush x:Key="PrimaryContainerBrush" Color="{StaticResource PrimaryContainerColor}" />
+            <SolidColorBrush x:Key="PrimaryContainerHoverBrush" Color="#88BDA4" />
+            <SolidColorBrush x:Key="PrimaryContainerPressedBrush" Color="#51756C" />
+            <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}" />
+            <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}" />
+            <SolidColorBrush x:Key="OnSecondaryBrush" Color="{StaticResource OnSecondaryColor}" />
+            <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource TertiaryColor}" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+
+            <!-- Sidebar background (the sunken/recessed "surface" tone) -->
+            <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SurfaceContainerLowestColor}" />
+
+            <!-- Active nav tint (subtle accent-100 wash) + a distinct active-item text color -->
+            <SolidColorBrush x:Key="NavActiveTintBrush" Color="#33E6F2DD" />
+            <SolidColorBrush x:Key="NavActiveForegroundBrush" Color="#E6F2DD" />
+
+            <!-- Status pill tints. Warning/Danger are identical across both themes;
+                 Success (Installed) and Info are theme-aware low-opacity accent tints. -->
+            <SolidColorBrush x:Key="PillInstalledBackgroundBrush" Color="#3D659287" />
+            <SolidColorBrush x:Key="PillInstalledForegroundBrush" Color="#CFE6DA" />
+            <SolidColorBrush x:Key="PillWarnBackgroundBrush" Color="#FAF1DE" />
+            <SolidColorBrush x:Key="PillWarnForegroundBrush" Color="#8A6420" />
+            <SolidColorBrush x:Key="PillErrorBackgroundBrush" Color="#F7E8E3" />
+            <SolidColorBrush x:Key="PillErrorForegroundBrush" Color="#8F4A35" />
+            <SolidColorBrush x:Key="PillInfoBackgroundBrush" Color="#2488BDA4" />
+            <SolidColorBrush x:Key="PillInfoForegroundBrush" Color="#B1D3B9" />
+
+        </ResourceDictionary>
+
+        <!-- ============================================================
+             Light theme
+             background = accent-100 #E6F2DD
+             text       = accent-600 mixed 60% into black
+             Surfaces step from a light sage tint (sidebar/recessed) up to
+             white/near-white cards, per the design's light-mode "white cards on
+             a sage ground" intent — exact intermediate hex values are a
+             design-judgment call (see report).
+             ============================================================ -->
+        <ResourceDictionary x:Key="Light">
+
+            <!-- Surfaces -->
+            <Color x:Key="SurfaceColor">#E6F2DD</Color>
+            <Color x:Key="SurfaceContainerLowestColor">#D9EACE</Color>
+            <Color x:Key="SurfaceContainerLowColor">#EDF6E6</Color>
+            <Color x:Key="SurfaceContainerColor">#F3F9EF</Color>
+            <Color x:Key="SurfaceContainerHighColor">#F8FBF6</Color>
+            <Color x:Key="SurfaceContainerHighestColor">#FBFDFA</Color>
+            <Color x:Key="SurfaceBrightColor">#FFFFFF</Color>
+
+            <!-- Text / lines -->
+            <Color x:Key="OnSurfaceColor">#283A36</Color>
+            <Color x:Key="OnSurfaceVariantColor">#3D5851</Color>
+            <Color x:Key="OutlineColor">#88BDA4</Color>
+            <Color x:Key="OutlineVariantColor">#DCEAD3</Color>
+
+            <!-- Accents -->
+            <Color x:Key="PrimaryColor">#659287</Color>
+            <Color x:Key="PrimaryContainerColor">#659287</Color>
+            <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
+            <Color x:Key="SecondaryColor">#51756C</Color>
+            <Color x:Key="OnSecondaryColor">#FFFFFF</Color>
+            <Color x:Key="TertiaryColor">#8A6420</Color>
+            <Color x:Key="ErrorColor">#8F4A35</Color>
+
+            <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerLowestBrush" Color="{StaticResource SurfaceContainerLowestColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerLowBrush" Color="{StaticResource SurfaceContainerLowColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerBrush" Color="{StaticResource SurfaceContainerColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerHighBrush" Color="{StaticResource SurfaceContainerHighColor}" />
+            <SolidColorBrush x:Key="SurfaceContainerHighestBrush" Color="{StaticResource SurfaceContainerHighestColor}" />
+            <SolidColorBrush x:Key="SurfaceBrightBrush" Color="{StaticResource SurfaceBrightColor}" />
+
+            <SolidColorBrush x:Key="OnSurfaceBrush" Color="{StaticResource OnSurfaceColor}" />
+            <SolidColorBrush x:Key="OnSurfaceVariantBrush" Color="{StaticResource OnSurfaceVariantColor}" />
+            <SolidColorBrush x:Key="OutlineBrush" Color="{StaticResource OutlineColor}" />
+            <SolidColorBrush x:Key="OutlineVariantBrush" Color="{StaticResource OutlineVariantColor}" />
+
+            <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+            <SolidColorBrush x:Key="PrimaryContainerBrush" Color="{StaticResource PrimaryContainerColor}" />
+            <SolidColorBrush x:Key="PrimaryContainerHoverBrush" Color="#88BDA4" />
+            <SolidColorBrush x:Key="PrimaryContainerPressedBrush" Color="#51756C" />
+            <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}" />
+            <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}" />
+            <SolidColorBrush x:Key="OnSecondaryBrush" Color="{StaticResource OnSecondaryColor}" />
+            <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource TertiaryColor}" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+
+            <!-- Sidebar background (a touch deeper than the page ground, so white
+                 content cards read as elevated above it) -->
+            <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SurfaceContainerLowestColor}" />
+
+            <!-- Active nav tint (near-white lifted pill) + a distinct active-item text color -->
+            <SolidColorBrush x:Key="NavActiveTintBrush" Color="#CCFFFFFF" />
+            <SolidColorBrush x:Key="NavActiveForegroundBrush" Color="#51756C" />
+
+            <!-- Status pill tints. Warning/Danger are identical across both themes;
+                 Success (Installed) and Info are theme-aware pastel accent tints. -->
+            <SolidColorBrush x:Key="PillInstalledBackgroundBrush" Color="#EEF5E3" />
+            <SolidColorBrush x:Key="PillInstalledForegroundBrush" Color="#3D472B" />
+            <SolidColorBrush x:Key="PillWarnBackgroundBrush" Color="#FAF1DE" />
+            <SolidColorBrush x:Key="PillWarnForegroundBrush" Color="#8A6420" />
+            <SolidColorBrush x:Key="PillErrorBackgroundBrush" Color="#F7E8E3" />
+            <SolidColorBrush x:Key="PillErrorForegroundBrush" Color="#8F4A35" />
+            <SolidColorBrush x:Key="PillInfoBackgroundBrush" Color="#D8E9CB" />
+            <SolidColorBrush x:Key="PillInfoForegroundBrush" Color="#425F58" />
+
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- ============================================================
+         Theme-invariant resources — defined OUTSIDE the ThemeDictionaries on
+         purpose: these values must NOT repaint when the light/dark variant
+         changes.
+
+         Terminal surface: code/console panels (InstallView step-detail blocks,
+         Logs viewport) keep a fixed dark look in both themes, like any
+         terminal. Promoted here from the #1B2A26 previously hardcoded in
+         InstallView.axaml.
+         ============================================================ -->
+    <Color x:Key="TerminalSurfaceColor">#1B2A26</Color>
+    <Color x:Key="TerminalTextColor">#CFE6DA</Color>
+    <SolidColorBrush x:Key="TerminalSurfaceBrush" Color="{StaticResource TerminalSurfaceColor}" />
+    <SolidColorBrush x:Key="TerminalTextBrush" Color="{StaticResource TerminalTextColor}" />
+
+    <!-- ToggleSwitch (Settings screen): the stock Fluent template checks these
+         accent-derived resource keys; without overrides the On state renders in
+         Fluent's default blue, which clashes with the sage palette. The sage
+         accent ramp is identical in both theme variants, so these too can live
+         at the invariant level. Only the On state is overridden — the Off state
+         already derives from the neutral variant colors and fits both themes. -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#659287" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#88BDA4" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#51756C" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#659287" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#88BDA4" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#51756C" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#FFFFFF" />
+
+</ResourceDictionary>

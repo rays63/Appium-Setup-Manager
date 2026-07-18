@@ -1,0 +1,115 @@
+## ── .NET / MSBuild ──────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.rsuser
+*.db
+*.opendb
+
+## ── NuGet ───────────────────────────────────────────────────────
+*.nupkg
+*.snupkg
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+!**/packages/build/
+
+## ── Build outputs ───────────────────────────────────────────────
+publish/
+dist/
+out/
+*.ilk
+*.meta
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp_proj
+*_i.c
+*_p.c
+*_h.h
+
+## ── Avalonia ────────────────────────────────────────────────────
+*.avares
+
+## ── Test results ────────────────────────────────────────────────
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*/
+
+## ── Rider / JetBrains ───────────────────────────────────────────
+.idea/
+*.sln.iml
+
+## ── Visual Studio Code ──────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## ── macOS ───────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon
+
+## ── Windows ─────────────────────────────────────────────────────
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+## ── Linux ───────────────────────────────────────────────────────
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+## ── Logs ────────────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+
+## ── Secrets / env ───────────────────────────────────────────────
+*.env
+*.env.*
+secrets.json
+appsettings.*.json
+!appsettings.json
+
+## ── Packaging / signing ─────────────────────────────────────────
+*.p12
+*.pfx
+*.cer
+*.entitlements
+build/output/
+
+
+.claude
+.claude/*
+
+Appium_Setup_Manager_PRD.md

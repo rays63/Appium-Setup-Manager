@@ -1,0 +1,105 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: windows-x64,   os: windows-latest, rid: win-x64 }
+          - { name: windows-arm64, os: windows-latest, rid: win-arm64 }
+          - { name: macos-x64,     os: macos-latest,   rid: osx-x64 }
+          - { name: macos-arm64,   os: macos-latest,   rid: osx-arm64 }
+          - { name: linux-x64,     os: ubuntu-latest,  rid: linux-x64 }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Derive the app version from the pushed tag (v1.2.3 -> 1.2.3). For non-tag
+      # builds (branch pushes, PRs, manual runs) fall back to a CI dev version so
+      # the artifacts are still distinguishable.
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            V="${{ github.ref_name }}"
+            V="${V#v}"
+            echo "number=$V" >> "$GITHUB_OUTPUT"
+            echo "prop=-p:Version=$V" >> "$GITHUB_OUTPUT"
+          else
+            V="0.0.0-ci.${{ github.run_number }}"
+            echo "number=$V" >> "$GITHUB_OUTPUT"
+            echo "prop=-p:Version=$V" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Building version $V"
+
+      - name: Restore
+        run: dotnet restore src/AppiumSetupManager/AppiumSetupManager.csproj
+
+      - name: Build
+        run: dotnet build src/AppiumSetupManager/AppiumSetupManager.csproj -c Release --no-restore ${{ steps.version.outputs.prop }}
+
+      - name: Test
+        run: dotnet test src/AppiumSetupManager.Tests/AppiumSetupManager.Tests.csproj -c Release
+
+      - name: Publish self-contained single file
+        run: >
+          dotnet publish src/AppiumSetupManager/AppiumSetupManager.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          ${{ steps.version.outputs.prop }}
+          -o publish/${{ matrix.name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppiumSetupManager-${{ matrix.name }}
+          path: publish/${{ matrix.name }}
+          if-no-files-found: error
+
+  release:
+    name: Attach binaries to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Zip each platform build
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cd artifacts
+          for dir in */; do
+            name="${dir%/}"
+            zip -r "../${name}-${VERSION}.zip" "$dir"
+          done
+          cd ..
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.zip'
+          generate_release_notes: true

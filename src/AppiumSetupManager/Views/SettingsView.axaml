@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <DockPanel>
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="headline-md" Text="{x:Static strings:Strings.SettingsTitle}" />
+            <TextBlock Classes="body-sm muted" Text="{x:Static strings:Strings.SettingsSubtitle}" />
+        </StackPanel>
+
+        <ScrollViewer>
+            <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                <!-- ================= Card 1 — Notifications & Updates ================= -->
+                <Border Classes="card" Padding="24,20">
+                    <StackPanel Spacing="4">
+
+                        <TextBlock Classes="headline-sm"
+                                   Margin="0,0,0,10"
+                                   Text="{x:Static strings:Strings.SettingsCardNotifications}" />
+
+                        <!-- Automatic Update Checks -->
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,8">
+                            <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,24,0" VerticalAlignment="Center">
+                                <TextBlock Classes="body-sm"
+                                           FontWeight="SemiBold"
+                                           Text="{x:Static strings:Strings.SettingsAutoUpdateChecksLabel}" />
+                                <TextBlock Classes="body-sm muted"
+                                           TextWrapping="Wrap"
+                                           Text="{x:Static strings:Strings.SettingsAutoUpdateChecksDescription}" />
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1"
+                                          VerticalAlignment="Center"
+                                          OnContent="{x:Null}" OffContent="{x:Null}"
+                                          IsChecked="{Binding AutomaticUpdateChecks, Mode=TwoWay}"
+                                          AutomationProperties.Name="{x:Static strings:Strings.SettingsAutoUpdateChecksLabel}" />
+                        </Grid>
+                        <Border Classes="divider" />
+
+                        <!-- Notify on Failure -->
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,8">
+                            <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,24,0" VerticalAlignment="Center">
+                                <TextBlock Classes="body-sm"
+                                           FontWeight="SemiBold"
+                                           Text="{x:Static strings:Strings.SettingsNotifyFailureLabel}" />
+                                <TextBlock Classes="body-sm muted"
+                                           TextWrapping="Wrap"
+                                           Text="{x:Static strings:Strings.SettingsNotifyFailureDescription}" />
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1"
+                                          VerticalAlignment="Center"
+                                          OnContent="{x:Null}" OffContent="{x:Null}"
+                                          IsChecked="{Binding NotifyOnFailure, Mode=TwoWay}"
+                                          AutomationProperties.Name="{x:Static strings:Strings.SettingsNotifyFailureLabel}" />
+                        </Grid>
+                        <Border Classes="divider" />
+
+                        <!-- Notify on Completion -->
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,8">
+                            <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,24,0" VerticalAlignment="Center">
+                                <TextBlock Classes="body-sm"
+                                           FontWeight="SemiBold"
+                                           Text="{x:Static strings:Strings.SettingsNotifyCompletionLabel}" />
+                                <TextBlock Classes="body-sm muted"
+                                           TextWrapping="Wrap"
+                                           Text="{x:Static strings:Strings.SettingsNotifyCompletionDescription}" />
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1"
+                                          VerticalAlignment="Center"
+                                          OnContent="{x:Null}" OffContent="{x:Null}"
+                                          IsChecked="{Binding NotifyOnCompletion, Mode=TwoWay}"
+                                          AutomationProperties.Name="{x:Static strings:Strings.SettingsNotifyCompletionLabel}" />
+                        </Grid>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- ================= Privacy note ================= -->
+                <Border Classes="card" Padding="24,20">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="headline-sm"
+                                   Text="{x:Static strings:Strings.SettingsCardPrivacy}" />
+                        <TextBlock Classes="body-sm muted"
+                                   TextWrapping="Wrap"
+                                   Text="{x:Static strings:Strings.SettingsPrivacyNote}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ================= Card 2 — Keyboard Shortcuts ================= -->
+                <Border Classes="card" Padding="24,20">
+                    <StackPanel Spacing="4">
+
+                        <TextBlock Classes="headline-sm"
+                                   Margin="0,0,0,10"
+                                   Text="{x:Static strings:Strings.SettingsCardShortcuts}" />
+
+                        <ItemsControl ItemsSource="{Binding Shortcuts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ShortcutRowViewModel">
+                                    <StackPanel>
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,10">
+                                            <TextBlock Grid.Column="0"
+                                                       Classes="body-sm"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding Label}" />
+                                            <Border Grid.Column="1" Classes="keybadge">
+                                                <TextBlock Text="{Binding KeyBadge}" />
+                                            </Border>
+                                        </Grid>
+                                        <Border Classes="divider" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
+
+</UserControl>
