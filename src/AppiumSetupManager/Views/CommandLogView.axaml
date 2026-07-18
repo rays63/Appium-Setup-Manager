@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:models="using:AppiumSetupManager.Core.Models"
+             xmlns:converters="using:AppiumSetupManager.Converters"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.CommandLogView"
+             x:DataType="vm:CommandLogViewModel">
+
+    <UserControl.Resources>
+        <converters:LogEntryKindToBrushConverter x:Key="LogEntryKindToBrushConverter" />
+        <converters:BoolToExpandCollapseConverter x:Key="BoolToExpandCollapseConverter" />
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource SurfaceContainerLowestBrush}"
+            BorderBrush="{DynamicResource OutlineVariantBrush}"
+            BorderThickness="0,1,0,0">
+        <DockPanel>
+
+            <!-- Header row -->
+            <Border DockPanel.Dock="Top"
+                    Background="{DynamicResource SurfaceContainerLowestBrush}"
+                    BorderBrush="{DynamicResource OutlineVariantBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+
+                    <TextBlock Grid.Column="0"
+                               Text="{x:Static strings:Strings.CommandLogFileName}"
+                               FontFamily="{DynamicResource MonoFont}"
+                               FontSize="{DynamicResource FontSizeCodeSm}"
+                               Foreground="{DynamicResource OnSurfaceVariantBrush}"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                VerticalAlignment="Center">
+                        <Button Classes="ghosticon"
+                                Content="{Binding IsCollapsed, Converter={StaticResource BoolToExpandCollapseConverter}}"
+                                Command="{Binding ToggleCollapseCommand}"
+                                AutomationProperties.Name="Toggle command log" />
+                        <Button Classes="ghosticon"
+                                Content="{x:Static strings:Strings.CommandLogExport}"
+                                Command="{Binding ExportLogCommand}"
+                                AutomationProperties.Name="Export log" />
+                    </StackPanel>
+
+                </Grid>
+            </Border>
+
+            <!-- Log output -->
+            <ScrollViewer x:Name="LogScrollViewer"
+                          IsVisible="{Binding !IsCollapsed}"
+                          Padding="14,12,14,48"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Entries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:LogEntry">
+                            <TextBlock Text="{Binding Text}"
+                                       Foreground="{Binding Kind, Converter={StaticResource LogEntryKindToBrushConverter}}"
+                                       FontFamily="{DynamicResource MonoFont}"
+                                       FontSize="{DynamicResource FontSizeCodeSm}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="20"
+                                       Margin="0,3" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        </DockPanel>
+    </Border>
+
+</UserControl>

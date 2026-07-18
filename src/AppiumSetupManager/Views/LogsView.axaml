@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:models="using:AppiumSetupManager.Core.Models"
+             xmlns:converters="using:AppiumSetupManager.Converters"
+             xmlns:strings="using:AppiumSetupManager.Localization"
+             x:Class="AppiumSetupManager.Views.LogsView"
+             x:DataType="vm:LogsViewModel">
+
+    <UserControl.Resources>
+        <converters:LogEntryKindToBrushConverter x:Key="LogEntryKindToBrushConverter" />
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="headline-md" Text="{x:Static strings:Strings.LogsTitle}" />
+            <TextBlock Classes="body-sm muted" Text="{x:Static strings:Strings.LogsSubtitle}" />
+        </StackPanel>
+
+        <!-- Toolbar: search + single-select kind filter pills -->
+        <Grid DockPanel.Dock="Top"
+              ColumnDefinitions="Auto,*"
+              Margin="0,0,0,12">
+
+            <TextBox Grid.Column="0"
+                     MinWidth="220"
+                     MaxWidth="280"
+                     VerticalAlignment="Center"
+                     Padding="14,7"
+                     Text="{Binding SearchText, Mode=TwoWay}"
+                     Watermark="{x:Static strings:Strings.LogsSearchPlaceholder}"
+                     AutomationProperties.Name="{x:Static strings:Strings.LogsSearchName}"
+                     IsTabStop="True" />
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        Margin="16,0,0,0"
+                        VerticalAlignment="Center">
+                <RadioButton Classes="filterpill"
+                             GroupName="LogFilter"
+                             Content="{x:Static strings:Strings.LogsFilterAll}"
+                             IsChecked="{Binding SelectedFilter, Mode=TwoWay, Converter={x:Static converters:LogFilterEqualsConverter.Instance}, ConverterParameter=All}"
+                             AutomationProperties.Name="{x:Static strings:Strings.LogsFilterAll}" />
+                <RadioButton Classes="filterpill"
+                             GroupName="LogFilter"
+                             Content="{x:Static strings:Strings.LogsFilterCommands}"
+                             IsChecked="{Binding SelectedFilter, Mode=TwoWay, Converter={x:Static converters:LogFilterEqualsConverter.Instance}, ConverterParameter=Commands}"
+                             AutomationProperties.Name="{x:Static strings:Strings.LogsFilterCommands}" />
+                <RadioButton Classes="filterpill"
+                             GroupName="LogFilter"
+                             Content="{x:Static strings:Strings.LogsFilterOutput}"
+                             IsChecked="{Binding SelectedFilter, Mode=TwoWay, Converter={x:Static converters:LogFilterEqualsConverter.Instance}, ConverterParameter=Output}"
+                             AutomationProperties.Name="{x:Static strings:Strings.LogsFilterOutput}" />
+                <RadioButton Classes="filterpill"
+                             GroupName="LogFilter"
+                             Content="{x:Static strings:Strings.LogsFilterWarnings}"
+                             IsChecked="{Binding SelectedFilter, Mode=TwoWay, Converter={x:Static converters:LogFilterEqualsConverter.Instance}, ConverterParameter=Warnings}"
+                             AutomationProperties.Name="{x:Static strings:Strings.LogsFilterWarnings}" />
+                <RadioButton Classes="filterpill"
+                             GroupName="LogFilter"
+                             Content="{x:Static strings:Strings.LogsFilterErrors}"
+                             IsChecked="{Binding SelectedFilter, Mode=TwoWay, Converter={x:Static converters:LogFilterEqualsConverter.Instance}, ConverterParameter=Errors}"
+                             AutomationProperties.Name="{x:Static strings:Strings.LogsFilterErrors}" />
+            </StackPanel>
+
+        </Grid>
+
+        <!-- Log viewport — fixed dark terminal surface (theme-invariant), fills remaining height -->
+        <Border Background="{DynamicResource TerminalSurfaceBrush}"
+                CornerRadius="12">
+            <Panel>
+
+                <ScrollViewer Padding="14,12"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              IsVisible="{Binding HasVisibleEntries}">
+                    <ItemsControl ItemsSource="{Binding FilteredEntries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:LogEntry">
+                                <TextBlock Text="{Binding Text}"
+                                           Foreground="{Binding Kind, Converter={StaticResource LogEntryKindToBrushConverter}}"
+                                           FontFamily="{DynamicResource MonoFont}"
+                                           FontSize="{DynamicResource FontSizeCodeSm}"
+                                           TextWrapping="Wrap"
+                                           LineHeight="20"
+                                           Margin="0,3" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Empty state — no entries match the current filter/search -->
+                <TextBlock IsVisible="{Binding !HasVisibleEntries}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontFamily="{DynamicResource MonoFont}"
+                           FontSize="{DynamicResource FontSizeCodeSm}"
+                           Foreground="{DynamicResource TerminalTextBrush}"
+                           Opacity="0.7"
+                           Text="{x:Static strings:Strings.LogsEmptyState}" />
+
+            </Panel>
+        </Border>
+
+    </DockPanel>
+
+</UserControl>
