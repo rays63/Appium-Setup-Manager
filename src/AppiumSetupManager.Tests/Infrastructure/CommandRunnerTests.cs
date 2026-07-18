@@ -88,7 +88,9 @@ public class CommandRunnerTests
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             cmd = "cmd";
-            args = "/c echo line1 && echo line2 && echo line3";
+            // No space before && — cmd's echo includes everything up to the operator in its
+            // output, so "echo line1 &&" would emit "line1 " with a trailing space.
+            args = "/c echo line1&&echo line2&&echo line3";
         }
         else
         {
