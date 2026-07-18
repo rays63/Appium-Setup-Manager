@@ -1,6 +1,8 @@
 using System.Collections.Specialized;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using AppiumSetupManager.Localization;
 using AppiumSetupManager.ViewModels;
 
 namespace AppiumSetupManager.Views;
@@ -22,6 +24,7 @@ public partial class CommandLogView : UserControl
         if (_subscribedVm is not null)
         {
             ((INotifyCollectionChanged)_subscribedVm.Entries).CollectionChanged -= OnEntriesChanged;
+            _subscribedVm.SaveFilePickerAsync = null;
             _subscribedVm = null;
         }
 
@@ -29,7 +32,29 @@ public partial class CommandLogView : UserControl
         {
             _subscribedVm = vm;
             ((INotifyCollectionChanged)vm.Entries).CollectionChanged += OnEntriesChanged;
+            // The VM has no window reference — the view supplies StorageProvider access so the
+            // export command can open a native save dialog without leaving MVVM.
+            vm.SaveFilePickerAsync = PickSaveFileAsync;
         }
+    }
+
+    private async Task<IStorageFile?> PickSaveFileAsync(string suggestedName)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null)
+            return null;
+
+        return await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = Strings.CommandLogExportDialogTitle,
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "txt",
+            ShowOverwritePrompt = true,
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType(Strings.CommandLogExportFileTypeName) { Patterns = new[] { "*.txt" } },
+            },
+        });
     }
 
     private void OnEntriesChanged(object? sender, NotifyCollectionChangedEventArgs e)

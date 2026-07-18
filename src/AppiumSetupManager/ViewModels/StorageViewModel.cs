@@ -22,7 +22,7 @@ public partial class StorageViewModel : ObservableObject, IDisposable
     /// <summary>
     /// One 0..1 fraction per distinct category's share of total reclaimable bytes — feeds the hero
     /// RingChart's multi-segment donut via FractionsToRingSegmentsConverter. Empty until a scan
-    /// finds at least one item (StorageService is still a stub returning [] — see report).
+    /// finds at least one item.
     /// </summary>
     public ObservableCollection<double> CategoryFractions { get; } = new();
 

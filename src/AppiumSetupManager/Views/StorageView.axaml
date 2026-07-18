@@ -7,6 +7,14 @@
              x:Class="AppiumSetupManager.Views.StorageView"
              x:DataType="vm:StorageViewModel">
 
+    <UserControl.Styles>
+        <!-- Review/InUse rows are not selectable — the whole row reads as muted, matching the
+             disabled CheckBox the Fluent theme already dims. -->
+        <Style Selector="Grid.dimmedRow">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+    </UserControl.Styles>
+
     <Panel>
 
         <ScrollViewer>
@@ -79,10 +87,12 @@
                         <DataTemplate x:DataType="vm:StorageItemViewModel">
                             <Grid ColumnDefinitions="Auto,*,Auto,Auto"
                                   Margin="0,0,0,2"
-                                  Height="52">
+                                  MinHeight="52"
+                                  Classes.dimmedRow="{Binding !IsSafeToDelete}">
                                 <CheckBox Grid.Column="0"
                                           IsChecked="{Binding IsSelected, Mode=OneWay}"
                                           Command="{Binding ToggleSelectionCommand}"
+                                          IsEnabled="{Binding IsSafeToDelete}"
                                           VerticalAlignment="Center"
                                           Margin="0,0,14,0"
                                           MinWidth="44" MinHeight="44"
@@ -95,20 +105,29 @@
                                                MaxWidth="420"
                                                TextTrimming="CharacterEllipsis"
                                                ToolTip.Tip="{Binding Path}" />
+                                    <TextBlock Classes="body-sm muted"
+                                               Text="{Binding LastUsedDisplay}"
+                                               IsVisible="{Binding HasLastUsed}" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <!-- Icon + color risk tags — two mutually-exclusive siblings so each
-                                         keeps its own DynamicResource brushes (stays theme-reactive). -->
+                                    <!-- Icon + color risk tags — three mutually-exclusive siblings (one per
+                                         RiskLevel tier) so each keeps its own DynamicResource brushes
+                                         (stays theme-reactive). -->
                                     <Border Classes="pill"
                                             Background="{DynamicResource PillInstalledBackgroundBrush}"
-                                            IsVisible="{Binding IsSafeToDelete}">
+                                            IsVisible="{Binding IsLowRisk}">
                                         <TextBlock Classes="label-caps" Foreground="{DynamicResource SecondaryBrush}" Text="{Binding RiskTag}" />
                                     </Border>
                                     <Border Classes="pill"
                                             Background="{DynamicResource PillWarnBackgroundBrush}"
-                                            IsVisible="{Binding !IsSafeToDelete}">
+                                            IsVisible="{Binding IsReviewRisk}">
                                         <TextBlock Classes="label-caps" Foreground="{DynamicResource TertiaryBrush}" Text="{Binding RiskTag}" />
+                                    </Border>
+                                    <Border Classes="pill"
+                                            Background="{DynamicResource PillErrorBackgroundBrush}"
+                                            IsVisible="{Binding IsInUseRisk}">
+                                        <TextBlock Classes="label-caps" Foreground="{DynamicResource PillErrorForegroundBrush}" Text="{Binding RiskTag}" />
                                     </Border>
                                 </StackPanel>
 

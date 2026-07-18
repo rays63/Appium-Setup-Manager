@@ -34,7 +34,7 @@ public partial class App : Application
             var doctorService = new DoctorService(runner, platform, historyStore);
             var doctorVm    = new DoctorViewModel(doctorService);
             var storageService = new StorageService(platform);
-            var cleanupService = new CleanupService(runner, historyStore);
+            var cleanupService = new CleanupService(runner, historyStore, platform);
             var storageVm   = new StorageViewModel(storageService, cleanupService);
             var environmentVm = new EnvironmentViewModel(detection, envManager, backupStore, historyStore);
             var updateCheck = new UpdateCheckService();
@@ -44,7 +44,7 @@ public partial class App : Application
             var settingsVm  = new SettingsViewModel(settingsStore, platform);
             var themeStore  = new SettingsThemePreferenceStore(settingsStore);
             var themeService = new ThemeService(themeStore);
-            var mainVm      = new MainWindowViewModel(logBuffer, detection, installer, platform, envManager, themeService, installVm, doctorVm, storageVm, environmentVm, updatesVm, historyVm, logsVm, settingsVm);
+            var mainVm      = new MainWindowViewModel(logBuffer, logService, detection, installer, platform, envManager, themeService, installVm, doctorVm, storageVm, environmentVm, updatesVm, historyVm, logsVm, settingsVm);
 
             desktop.MainWindow = new MainWindow { DataContext = mainVm };
 

@@ -4013,20 +4013,22 @@ level (Section 39), not per-screen.
 
 Every screen below follows the same structure: Purpose, Layout, Components, Interactions, States
 (Empty/Loading/Failure/Success), Keyboard Shortcuts, Accessibility. This is the same design
-language already implemented for Version 1 (dark "Midnight Slate" theme, Inter for interface text,
-JetBrains Mono for technical/version data) — this section formalizes it as a system rather than a
-one-off visual pass, so future screens (and future plugins' screens) stay consistent.
+language already implemented for Version 1 (the "Organic" system with a sage/green accent — warm,
+rounded, pill-shaped controls; Caprasimo for display headings, Figtree for interface text, and a
+Menlo-first monospace stack for technical/version data) — this section formalizes it as a system
+rather than a one-off visual pass, so future screens (and future plugins' screens) stay consistent.
 
 ### 39.1 Design Tokens (shared across every screen)
 
 | Token category | Values |
 |---|---|
-| Surface colors | Background, surface-container (low/default/high/highest) — dark theme primary, light theme supported |
-| Accent | Primary (azure) for actions and active states |
-| Status colors | Success (emerald), Warning (amber), Error (rose) — always paired with text/icon, never color-only (Section 38.3) |
-| Typography | Inter (interface text), JetBrains Mono (versions, paths, commands, logs) |
-| Shape | 8px component radius, 16px card radius, 4px code-block radius, full-circle status dots |
-| Spacing | 4px base unit; 8/16/24px for component/layout gaps |
+| Surface colors | Background, surface-container (lowest/low/default/high/highest/bright) — dual-theme via Avalonia `ThemeDictionaries`. Dark (default): background/surface derived from the accent mixed toward black (#659287 at 22%/32%); Light: `#E6F2DD` ground with near-white card surfaces |
+| Accent | Sage green ramp — `#E6F2DD` (100) · `#B1D3B9` (300) · `#88BDA4` (500) · `#659287` (600, base) · 700/800/900 mixed progressively toward black — for actions, active nav pills, rings/donuts |
+| Status colors | Success (sage tint), Warning (amber `#faf1de`/`#8a6420`), Error (terracotta `#f7e8e3`/`#8f4a35`) — theme-variant pill brushes, always paired with text/icon, never color-only (Section 38.3) |
+| Typography | Caprasimo (display headings, single 400 weight), Figtree (interface text), Menlo-first monospace (versions, paths, commands, logs); both brand fonts embedded as Avalonia resources (OFL-licensed) |
+| Shape | Pill (999px) radius for buttons, inputs, tags, nav items, toggles; ~28px card radius; 12px terminal/code-block radius; full-circle status dots and progress rings |
+| Spacing | 4px base unit; 8/16/24px for component/layout gaps; 28/32px page content padding |
+| Elevation | Soft ink-tinted shadows (sm/md steps) on hero/overview cards; theme-invariant dark terminal surface (`TerminalSurfaceBrush` #1B2A26) for command/log panels |
 | Motion | Card/pill background-color transitions (~250ms); spinner glyph rotation (~0.8s loop); all motion respects reduced-motion preference (Section 38.3) |
 
 ### 39.2 Dashboard (Discover / Analyze)

@@ -1,9 +1,11 @@
+using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AppiumSetupManager.Core.Infrastructure;
 using AppiumSetupManager.Core.Platform;
 using AppiumSetupManager.Core.Services;
+using AppiumSetupManager.Localization;
 using AppiumSetupManager.Services;
 
 namespace AppiumSetupManager.ViewModels;
@@ -33,7 +35,21 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private ThemeMode _activeTheme;
 
-    public MainWindowViewModel(ILogBuffer logBuffer, IDetectionService detectionService, IInstallerService installerService, IPlatformAdapter platform, IEnvironmentVariableManager envManager, IThemeService themeService, InstallViewModel installViewModel, DoctorViewModel doctorViewModel, StorageViewModel storageViewModel, EnvironmentViewModel environmentViewModel, UpdatesViewModel updatesViewModel, HistoryViewModel historyViewModel, LogsViewModel logsViewModel, SettingsViewModel settingsViewModel)
+    // ── Top-bar quick search (R2 step 3) ─────────────────────────────────────
+
+    /// <summary>Live text of the top-bar search box; results rebuild on every change.</summary>
+    [ObservableProperty]
+    private string _searchQuery = string.Empty;
+
+    /// <summary>Whether the results popup under the search box is showing.</summary>
+    [ObservableProperty]
+    private bool _isSearchOpen;
+
+    public ObservableCollection<SearchResultViewModel> SearchResults { get; } = new();
+
+    private const int MaxSearchResults = 8;
+
+    public MainWindowViewModel(ILogBuffer logBuffer, ILogService logService, IDetectionService detectionService, IInstallerService installerService, IPlatformAdapter platform, IEnvironmentVariableManager envManager, IThemeService themeService, InstallViewModel installViewModel, DoctorViewModel doctorViewModel, StorageViewModel storageViewModel, EnvironmentViewModel environmentViewModel, UpdatesViewModel updatesViewModel, HistoryViewModel historyViewModel, LogsViewModel logsViewModel, SettingsViewModel settingsViewModel)
     {
         _themeService = themeService;
         _dashboard    = new DashboardViewModel(detectionService, installerService, platform, envManager);
@@ -45,7 +61,7 @@ public partial class MainWindowViewModel : ObservableObject
         _history      = historyViewModel;
         _logs         = logsViewModel;
         _settings     = settingsViewModel;
-        CommandLog    = new CommandLogViewModel(logBuffer);
+        CommandLog    = new CommandLogViewModel(logBuffer, logService);
         _currentView  = _dashboard;
         _activeTheme  = _themeService.CurrentMode;
 
@@ -158,5 +174,114 @@ public partial class MainWindowViewModel : ObservableObject
         NavigateToDoctor();
         if (_doctor.RunChecksCommand.CanExecute(null))
             _doctor.RunChecksCommand.Execute(null);
+    }
+
+    // ── Top-bar quick search (R2 step 3) ─────────────────────────────────────
+    // Result order: matching screens, then matching dashboard components, then a "search the
+    // logs for this" action which is always present for a non-empty query — so the popup is
+    // never empty while typing, and Enter always has something sensible to run.
+
+    /// <summary>Nav destinations searchable by their localized sidebar names.</summary>
+    private IEnumerable<(string Name, Action Navigate)> ScreenSearchEntries()
+    {
+        yield return (Strings.NavDashboard,   NavigateToDashboard);
+        yield return (Strings.NavInstall,     NavigateToInstall);
+        yield return (Strings.NavDoctor,      NavigateToDoctor);
+        yield return (Strings.NavEnvironment, NavigateToEnvironment);
+        yield return (Strings.NavStorage,     NavigateToStorage);
+        yield return (Strings.NavUpdates,     NavigateToUpdates);
+        yield return (Strings.NavHistory,     NavigateToHistory);
+        yield return (Strings.NavLogs,        NavigateToLogs);
+        yield return (Strings.NavSettings,    NavigateToSettings);
+    }
+
+    partial void OnSearchQueryChanged(string value) => RebuildSearchResults();
+
+    private void RebuildSearchResults()
+    {
+        SearchResults.Clear();
+
+        var query = SearchQuery.Trim();
+        if (query.Length == 0)
+        {
+            IsSearchOpen = false;
+            return;
+        }
+
+        // Screens — reserve the last slot for the always-present logs action.
+        foreach (var (name, navigate) in ScreenSearchEntries())
+        {
+            if (SearchResults.Count >= MaxSearchResults - 1)
+                break;
+
+            if (name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                SearchResults.Add(new SearchResultViewModel(
+                    name,
+                    Strings.SearchGoToScreen,
+                    () => { navigate(); ClearSearch(); }));
+        }
+
+        // Components from the dashboard's live detection list.
+        foreach (var component in _dashboard.Components)
+        {
+            if (SearchResults.Count >= MaxSearchResults - 1)
+                break;
+
+            if (component.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                SearchResults.Add(new SearchResultViewModel(
+                    component.Name,
+                    component.VersionDisplay ?? component.StatusLabel,
+                    () => { NavigateToDashboard(); ClearSearch(); }));
+        }
+
+        // Logs action — always last, always present for a non-empty query.
+        SearchResults.Add(new SearchResultViewModel(
+            string.Format(Strings.SearchLogsForFormat, query),
+            null,
+            () =>
+            {
+                _logs.SearchText = query;
+                NavigateToLogs();
+                ClearSearch();
+            }));
+
+        // Defensive only: the logs action above means a non-empty query always has ≥1 result,
+        // but if result construction ever changes, an empty popup must show an inert row
+        // rather than an empty floating card.
+        if (SearchResults.Count == 0)
+            SearchResults.Add(new SearchResultViewModel(Strings.SearchNoResults, null, null));
+
+        IsSearchOpen = true;
+    }
+
+    /// <summary>Enter in the search box — run the first actionable result.</summary>
+    [RelayCommand]
+    private void ExecuteFirstSearchResult()
+    {
+        var first = SearchResults.FirstOrDefault(r => r.IsExecutable);
+        first?.ExecuteCommand.Execute(null);
+    }
+
+    /// <summary>Escape — clear the query, which also closes the popup.</summary>
+    [RelayCommand]
+    private void DismissSearch() => ClearSearch();
+
+    /// <summary>
+    /// Close the popup without clearing the query (search box lost focus); typing again or
+    /// refocusing with a pending query reopens it.
+    /// </summary>
+    public void CloseSearchPopup() => IsSearchOpen = false;
+
+    /// <summary>Reopen the popup when the box regains focus and still holds a query.</summary>
+    public void ReopenSearchIfPending()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQuery) && SearchResults.Count > 0)
+            IsSearchOpen = true;
+    }
+
+    private void ClearSearch()
+    {
+        // Setting the query to empty rebuilds (clearing results) and closes the popup.
+        SearchQuery = string.Empty;
     }
 }

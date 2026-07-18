@@ -18,8 +18,14 @@ public static class Strings
     // Shell / branding (Organic sage restyle)
     public const string BrandBadge           = "A";
 
-    public const string TopBarSearchPlaceholder = "Search components, logs, docs…";
+    public const string TopBarSearchPlaceholder = "Search components, logs…";
     public const string TopBarSearch            = "Search";
+
+    // ── Visual Redesign R2 step 3 — top-bar quick search / command palette ──────
+    public const string SearchResultsName   = "Search results";
+    public const string SearchGoToScreen    = "Go to screen";
+    public const string SearchLogsForFormat = "Search logs for “{0}”";
+    public const string SearchNoResults     = "No results";
     public const string TopBarToggleTheme       = "Toggle color theme";
     public const string TopBarSettings          = "Settings";
 
@@ -44,6 +50,20 @@ public static class Strings
     public const string CommandLogCollapse  = "▲";
     public const string CommandLogExpand    = "▼";
     public const string CommandLogExport    = "Export";
+
+    // Command-log export (bottom console panel "Export" button)
+    public const string CommandLogExportDialogTitle    = "Export command log";
+    public const string CommandLogExportFileTypeName   = "Text file";
+    public const string CommandLogExportFileNameFormat = "appium-setup-manager-log-{0:yyyyMMdd-HHmmss}";
+    public const string CommandLogExportLineFormat     = "{0} {1}";
+    public const string CommandLogExportedFormat       = "Log exported to {0}";
+    public const string CommandLogExportFailedFormat   = "Log export failed: {0}";
+    // Per-line kind prefixes so the exported file is self-describing.
+    public const string CommandLogExportKindCommand = "[CMD]";
+    public const string CommandLogExportKindStdOut  = "[OUT]";
+    public const string CommandLogExportKindStdErr  = "[WRN]";
+    public const string CommandLogExportKindError   = "[ERR]";
+    public const string CommandLogExportKindInfo    = "[INF]";
     public const string DashboardInstall       = "Install";
     public const string DashboardUpdate        = "Update";
     public const string DashboardInstalling    = "Installing…";
@@ -128,7 +148,9 @@ public static class Strings
     public const string StorageReclaimFormat     = "{0:0.0} GB";
     public const string StorageSizeGbFormat      = "{0:0.0} GB";
     public const string StorageRiskLow           = "Low risk";
-    public const string StorageRiskMedium        = "Medium risk";
+    public const string StorageRiskReview        = "Review first";
+    public const string StorageRiskInUse         = "Recently used";
+    public const string StorageLastUsedFormat    = "Last used {0:MMM d, yyyy}";
     public const string StoragePreviewTitle      = "Confirm Cleanup";
     public const string StoragePreviewBody       = "The following items will be permanently deleted. This cannot be undone.";
     public const string StorageToastFormat       = "Freed {0:0.0} GB";

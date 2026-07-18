@@ -7,6 +7,7 @@
         x:Class="AppiumSetupManager.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{x:Static strings:Strings.AppTitle}"
+        Icon="/Assets/Icons/app-256.png"
         Width="1100" Height="740"
         MinWidth="880" MinHeight="580"
         Background="{DynamicResource SurfaceBrush}">
@@ -228,9 +229,71 @@
                         <TextBox x:Name="TopBarSearchBox"
                                  MinWidth="280"
                                  Padding="38,7,14,7"
+                                 Text="{Binding SearchQuery, Mode=TwoWay}"
                                  Watermark="{x:Static strings:Strings.TopBarSearchPlaceholder}"
                                  AutomationProperties.Name="{x:Static strings:Strings.TopBarSearch}"
-                                 IsTabStop="True" />
+                                 IsTabStop="True"
+                                 KeyDown="OnSearchBoxKeyDown"
+                                 GotFocus="OnSearchBoxGotFocus"
+                                 LostFocus="OnSearchFocusMoved" />
+
+                        <!-- Quick-search results. Light dismiss is off on purpose: the popup
+                             must survive the TextBox→ListBoxItem focus handoff on click, so
+                             open/close is owned by the ViewModel + focus tracking in
+                             code-behind (OnSearchFocusMoved). -->
+                        <Popup x:Name="SearchPopup"
+                               PlacementTarget="{Binding #TopBarSearchBox}"
+                               Placement="BottomEdgeAlignedLeft"
+                               VerticalOffset="6"
+                               IsLightDismissEnabled="False"
+                               IsOpen="{Binding IsSearchOpen, Mode=TwoWay}">
+                            <Border Width="{Binding #TopBarSearchBox.Bounds.Width}"
+                                    MinWidth="280"
+                                    MaxHeight="340"
+                                    Background="{DynamicResource SurfaceContainerHighBrush}"
+                                    BorderBrush="{DynamicResource OutlineVariantBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="16"
+                                    Padding="6"
+                                    BoxShadow="0 10 28 0 #40000000">
+                                <ListBox x:Name="SearchResultsList"
+                                         ItemsSource="{Binding SearchResults}"
+                                         Background="Transparent"
+                                         AutomationProperties.Name="{x:Static strings:Strings.SearchResultsName}"
+                                         KeyDown="OnSearchResultsKeyDown"
+                                         Tapped="OnSearchResultTapped"
+                                         LostFocus="OnSearchFocusMoved">
+                                    <ListBox.Styles>
+                                        <Style Selector="ListBoxItem" x:DataType="vm:SearchResultViewModel">
+                                            <Setter Property="CornerRadius" Value="10" />
+                                            <Setter Property="Padding" Value="12,8" />
+                                            <Setter Property="MinHeight" Value="44" />
+                                            <Setter Property="IsEnabled" Value="{Binding IsExecutable}" />
+                                            <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+                                        </Style>
+                                        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                            <Setter Property="Background" Value="{DynamicResource SurfaceContainerHighestBrush}" />
+                                        </Style>
+                                        <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+                                            <Setter Property="Background" Value="{DynamicResource SurfaceContainerHighestBrush}" />
+                                        </Style>
+                                    </ListBox.Styles>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SearchResultViewModel">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Classes="body-md"
+                                                           Text="{Binding Label}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Classes="body-sm muted"
+                                                           Text="{Binding Detail}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           IsVisible="{Binding HasDetail}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
                     </Grid>
 
                     <!-- flexible spacer is Grid.Column 2 -->

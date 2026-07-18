@@ -548,12 +548,12 @@ appium driver install xcuitest
 
 ### Phase 1 — Core Infrastructure (Weeks 1–2)
 
-- [ ] Scaffold Avalonia solution with Core / UI / Tests separation
-- [ ] Implement `CommandRunner` with async stdout/stderr streaming
-- [ ] Implement `IPlatformAdapter` with Windows / macOS / Linux stubs
-- [ ] Implement `EnvironmentVariableManager` per OS
-- [ ] Wire up `LogService` with Serilog
-- [ ] Basic `MainWindow` with navigation shell
+- [x] Scaffold Avalonia solution with Core / UI / Tests separation
+- [x] Implement `CommandRunner` with async stdout/stderr streaming
+- [x] Implement `IPlatformAdapter` with Windows / macOS / Linux stubs
+- [x] Implement `EnvironmentVariableManager` per OS
+- [x] Wire up `LogService` with Serilog
+- [x] Basic `MainWindow` with navigation shell
 
 **Exit criterion:** Can spawn a CLI process and stream its output to a console view.
 
@@ -561,11 +561,11 @@ appium driver install xcuitest
 
 ### Phase 2 — Detection & Dashboard (Weeks 3–4)
 
-- [ ] Implement `DetectionService` for all 8 components
-- [ ] `DashboardView` + `DashboardViewModel` bound to detection results
-- [ ] Auto-scan on launch
-- [ ] Manual Re-scan button
-- [ ] Component status grid with version display and state badges
+- [x] Implement `DetectionService` for all 8 components
+- [x] `DashboardView` + `DashboardViewModel` bound to detection results
+- [x] Auto-scan on launch
+- [x] Manual Re-scan button
+- [x] Component status grid with version display and state badges
 
 **Exit criterion:** Dashboard accurately reports all installed components on all 3 platforms.
 
@@ -573,13 +573,13 @@ appium driver install xcuitest
 
 ### Phase 3 — Installation (Weeks 5–7)
 
-- [ ] `InstallerService` with ordered, idempotent install steps
-- [ ] Quick Preset mode (one-button full install)
-- [ ] Advanced mode (component selection)
-- [ ] Per-OS install commands for all components
-- [ ] Environment variable configuration post-install
-- [ ] `InstallView` with live progress, step status, command expansion
-- [ ] Failure surfacing with retry
+- [x] `InstallerService` with ordered, idempotent install steps
+- [x] Quick Preset mode (one-button full install)
+- [x] Advanced mode (component selection)
+- [x] Per-OS install commands for all components
+- [x] Environment variable configuration post-install
+- [x] `InstallView` with live progress, step status, command expansion
+- [x] Failure surfacing with retry
 
 **Exit criterion:** Quick Preset installs a full Appium environment from scratch on all 3 platforms.
 
@@ -587,10 +587,10 @@ appium driver install xcuitest
 
 ### Phase 4 — Doctor (Week 8)
 
-- [ ] `DoctorService` implementing all health checks
-- [ ] `DoctorView` with pass/warn/fail indicators
-- [ ] Auto-fix for fixable checks
-- [ ] Auto-run doctor after install completes
+- [x] `DoctorService` implementing all health checks
+- [x] `DoctorView` with pass/warn/fail indicators
+- [x] Auto-fix for fixable checks
+- [x] Auto-run doctor after install completes
 
 **Exit criterion:** Doctor view correctly diagnoses a misconfigured environment and auto-fixes env var issues.
 
@@ -598,11 +598,11 @@ appium driver install xcuitest
 
 ### Phase 5 — Storage & Cleanup (Weeks 9–10)
 
-- [ ] `StorageService` discovery for all categories
-- [ ] `CleanupService` with dry-run and confirmed-delete modes
-- [ ] `StorageView` with visual breakdown and item list
-- [ ] Confirmation modal before any deletion
-- [ ] Deletion via CLI commands only
+- [x] `StorageService` discovery for all categories *(iOS runtimes/devices via `simctl` and stale-driver detection deferred; caches, logs, Gradle, AVDs, system images, DerivedData, Homebrew shipped)*
+- [x] `CleanupService` with dry-run and confirmed-delete modes *(preview modal = the dry run)*
+- [x] `StorageView` with visual breakdown and item list
+- [x] Confirmation modal before any deletion
+- [x] Deletion via CLI where a tool command exists (`npm`, `avdmanager`); safe validated filesystem walk otherwise *(amended from "CLI commands only" — no CLI exists for most cache categories, and freed bytes are measured, never assumed)*
 
 **Exit criterion:** Storage view shows accurate sizes; cleanup removes selected items without touching non-selected ones.
 
@@ -610,12 +610,12 @@ appium driver install xcuitest
 
 ### Phase 6 — Polish & Packaging (Weeks 11–12)
 
-- [ ] Keyboard navigation pass (full accessibility)
-- [ ] Icon-based status indicators (not color-only)
-- [ ] Error handling hardening and edge case coverage
-- [ ] Log export to file
+- [x] Keyboard navigation pass (full accessibility) *(5 global shortcuts + AutomationProperties on every interactive element via Redesign R1; a full tab-order audit on every screen remains open)*
+- [x] Icon-based status indicators (not color-only) *(all status pills carry text labels; glyph+label convention throughout)*
+- [x] Error handling hardening and edge case coverage *(CommandRunner missing-executable, fault-isolated scans/cleanups, never-throw stores; ongoing)*
+- [x] Log export to file
 - [ ] Velopack-based installer for Win / macOS / Linux
-- [ ] macOS code signing + notarization
+- [ ] macOS code signing + notarization *(resolved as "skip for V1" — Open Question #6)*
 - [ ] Performance pass (launch < 3s, scan < 10s)
 
 **Exit criterion:** App installs, runs, and passes health check on a clean Windows 10, macOS 12, and Ubuntu 22.04 machine.
@@ -688,9 +688,38 @@ appium driver install xcuitest
 | 2 | Package manager choice: OS PM vs bundled installers? | Ray | **Resolved** | **OS PM first (brew/winget/apt), fallback to direct download** if PM is absent. |
 | 3 | Elevation model: per-command or once at launch? | Ray | **Resolved** | **Detect upfront + prefer user-scope installs.** Check at launch if any step needs elevation; request it once. Where possible, install to user home to avoid elevation entirely. |
 | 4 | Version pinning: fixed manifest or configurable? | Ray | **Resolved** | **Pinned defaults; user can override in Advanced mode.** Quick Preset uses a tested version matrix. |
-| 5 | AVD ownership: heuristic for junk vs wanted AVDs? | Ray | **Resolved** | **Auto-mark as safe if not used in 30+ days** (via last-used timestamp). All others flagged for user review. |
+| 5 | AVD ownership: heuristic for junk vs wanted AVDs? | Ray | **Resolved (superseded)** | ~~Auto-mark as safe if not used in 30+ days~~ **Superseded by PRD §23.9 AC-2 during implementation: named AVDs are never auto-marked safe.** Unused >30 days → "Review first" (amber, user decides); recently used → "Recently used" (not selectable). Only cache/log categories are auto-safe. |
 | 6 | macOS signing: individual dev cert or org cert? | Ray | **Resolved** | **Skip signing for now.** Ship unsigned for internal team use; users open via right-click → Open. Add signing later. |
 | 7 | Localization architecture: resource files from day 1? | Ray | **Resolved** | **Yes — resource files from day 1.** All strings go through resource files even though only English ships at launch. |
+
+---
+
+## 13. Visual Redesign R1/R2 (July 2026) — Status Record
+
+A full visual and functional overhaul, implemented after Phases 1–5, from the claude.ai/design
+project "Appium Setup Manager UI" (Organic design system, sage/green accent `#659287`,
+Caprasimo/Figtree typography, pill-radius language, dual light/dark theme). Not part of the
+Phase 1–6 numbering above — referred to as "R1"/"R2" in commits and code comments.
+
+**R1 (6 steps):** theme tokens + embedded fonts + light/dark toggle + 9-item nav shell; reskin of
+Dashboard/Installation/Doctor/Storage; real Environment screen (env-var editor with backup/restore);
+real Updates screen (npm-registry version checks); real History screen (persistent audit log at
+`~/.appiumsetupmanager/history.json`, rollback only for env-var Setup entries); Logs screen
+(filterable view over the shared log buffer) + Settings screen + settings persistence
+(`~/.appiumsetupmanager/settings.json`) + 5 working global keyboard shortcuts.
+
+**R2:** real `StorageService`/`CleanupService` (see amended Phase 5 above); log export; top-bar
+quick-search palette (screens/components/logs); PRD §39 design tokens updated to match; app icon
+(`Assets/Icons/` — ico/icns/png generated from the design's brand glyph); font OFL licenses bundled.
+
+**Design-honesty rule established during R1** (binding for future work): no UI element ships that
+looks functional but isn't — controls without a real backing capability are omitted or visibly
+disabled, settings persist only if they are (or will be) genuinely consumed, and reported numbers
+(freed bytes, versions, health scores) are always measured, never assumed.
+
+**Known open items:** Velopack packaging + performance pass + clean-machine validation (Phase 6);
+notification mechanism to consume the Notify on Failure/Completion settings; snapshot/grace-period
+restore for cleanup; Dashboard tile "Open folder"/"Repair" commands; full per-screen tab-order audit.
 
 ---
 

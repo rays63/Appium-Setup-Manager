@@ -2,6 +2,9 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using AppiumSetupManager.ViewModels;
 
@@ -19,6 +22,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+
+        // The search popup is not light-dismiss (see MainWindow.axaml), so it would float over
+        // other apps when the window loses activation — close it explicitly.
+        Deactivated += (_, _) => (DataContext as MainWindowViewModel)?.CloseSearchPopup();
     }
 
     // Global keyboard shortcuts (documented on the Settings screen — SettingsViewModel's badge
@@ -67,6 +74,91 @@ public partial class MainWindow : Window
         {
             Gesture = new KeyGesture(Key.L, cmd | KeyModifiers.Shift),
             Command = vm.ToggleThemeCommand,
+        });
+    }
+
+    // ── Top-bar quick search (R2 step 3) ─────────────────────────────────────
+    // Pure focus/keyboard plumbing — what the results ARE and what they DO lives in
+    // MainWindowViewModel. The popup is not light-dismiss, so close-on-focus-loss is handled
+    // here, deferred one dispatcher tick so a click that moves focus from the TextBox into a
+    // result row never closes the popup before the row's Tapped handler runs.
+
+    private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+
+        switch (e.Key)
+        {
+            case Key.Enter when vm.IsSearchOpen:
+                vm.ExecuteFirstSearchResultCommand.Execute(null);
+                Focus(); // popup closed — return focus to the window content
+                e.Handled = true;
+                break;
+
+            case Key.Escape:
+                vm.DismissSearchCommand.Execute(null);
+                Focus(); // unfocus the search box
+                e.Handled = true;
+                break;
+
+            case Key.Down when vm.IsSearchOpen && SearchResultsList.ItemCount > 0:
+                SearchResultsList.SelectedIndex = 0;
+                var container = SearchResultsList.ContainerFromIndex(0);
+                (container ?? SearchResultsList).Focus();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnSearchResultsKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+
+        switch (e.Key)
+        {
+            case Key.Enter:
+                if (SearchResultsList.SelectedItem is SearchResultViewModel { IsExecutable: true } result)
+                {
+                    result.ExecuteCommand.Execute(null);
+                    Focus();
+                }
+                e.Handled = true;
+                break;
+
+            case Key.Escape:
+                vm.DismissSearchCommand.Execute(null);
+                TopBarSearchBox.Focus();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnSearchResultTapped(object? sender, TappedEventArgs e)
+    {
+        var item = (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true);
+        if (item?.DataContext is SearchResultViewModel { IsExecutable: true } result)
+        {
+            result.ExecuteCommand.Execute(null);
+            Focus();
+        }
+    }
+
+    private void OnSearchBoxGotFocus(object? sender, GotFocusEventArgs e) =>
+        (DataContext as MainWindowViewModel)?.ReopenSearchIfPending();
+
+    // Shared LostFocus handler for the TextBox and the results list: once focus has settled,
+    // close the popup only if it landed outside both.
+    private void OnSearchFocusMoved(object? sender, RoutedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (DataContext is not MainWindowViewModel vm || !vm.IsSearchOpen)
+                return;
+
+            if (!TopBarSearchBox.IsKeyboardFocusWithin && !SearchResultsList.IsKeyboardFocusWithin)
+                vm.CloseSearchPopup();
         });
     }
 
