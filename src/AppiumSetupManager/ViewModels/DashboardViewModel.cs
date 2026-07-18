@@ -46,29 +46,6 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private ComponentStatusViewModel? _androidHomeItem;
 
-    [ObservableProperty]
-    private bool _isConfiguringJavaHome;
-
-    [ObservableProperty]
-    private bool _isConfiguringAndroidHome;
-
-    [ObservableProperty]
-    private string? _javaHomeConfigureMessage;
-
-    [ObservableProperty]
-    private string? _androidHomeConfigureMessage;
-
-    // ── System paths ─────────────────────────────────────────────────────────
-
-    [ObservableProperty]
-    private ComponentStatusViewModel? _appiumItem;
-
-    [ObservableProperty]
-    private ComponentStatusViewModel? _adbItem;
-
-    [ObservableProperty]
-    private ComponentStatusViewModel? _nodeItem;
-
     // ── Environment health ───────────────────────────────────────────────────
 
     [ObservableProperty]
@@ -76,6 +53,21 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _environmentHealthSubtext = string.Empty;
+
+    // ── Hero "Quick Install" CTA ──────────────────────────────────────────────
+
+    [ObservableProperty]
+    private bool _isQuickInstalling;
+
+    private CancellationTokenSource _quickInstallCts = new();
+
+    /// <summary>
+    /// Raised when the user clicks the hero's "Advanced Install" CTA. DashboardViewModel has no
+    /// navigation concept of its own (that lives in MainWindowViewModel, which owns the nav state
+    /// for every screen) — MainWindowViewModel subscribes to this and switches CurrentView to the
+    /// Install screen, the same indirection pattern InstallViewModel.InstallCompleted already uses.
+    /// </summary>
+    public event Action? AdvancedInstallRequested;
 
     private readonly IPlatformAdapter _platform;
 
@@ -89,14 +81,9 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand(CanExecute = nameof(CanRescan))]
-    private Task RescanAsync() => ScanAsync(clearConfigureMessages: true);
+    private Task RescanAsync() => ScanAsync();
 
-    /// <summary>
-    /// Runs the actual scan. <paramref name="clearConfigureMessages"/> is false when called right
-    /// after ConfigureJavaHomeAsync/ConfigureAndroidHomeAsync, so the not-found message they just set
-    /// survives the follow-up re-scan instead of being wiped before the user ever sees it.
-    /// </summary>
-    private async Task ScanAsync(bool clearConfigureMessages)
+    private async Task ScanAsync()
     {
         _scanCts.Cancel();
         _scanCts = new CancellationTokenSource();
@@ -106,11 +93,6 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
         RescanCommand.NotifyCanExecuteChanged();
         Components.Clear();
         PathValue = Environment.GetEnvironmentVariable("PATH");
-        if (clearConfigureMessages)
-        {
-            JavaHomeConfigureMessage = null;
-            AndroidHomeConfigureMessage = null;
-        }
 
         try
         {
@@ -121,9 +103,6 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
 
             JavaHomeItem    = Components.FirstOrDefault(c => c.Name == "JAVA_HOME");
             AndroidHomeItem = Components.FirstOrDefault(c => c.Name == "ANDROID_HOME");
-            AppiumItem       = Components.FirstOrDefault(c => c.Name == "Appium");
-            AdbItem          = Components.FirstOrDefault(c => c.Name == "ADB");
-            NodeItem         = Components.FirstOrDefault(c => c.Name == "Node.js");
             XcodeVersionText = Components.FirstOrDefault(c => c.Name == "Xcode")?.VersionDisplay;
 
             var applicable = results.Where(r => r.State != DetectionState.NotApplicable).ToList();
@@ -154,50 +133,46 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
     private bool CanRescan() => !IsScanning;
 
     /// <summary>
-    /// Looks for a JDK already installed outside this app (e.g. bundled with Android Studio) and, if
-    /// found, points JAVA_HOME at it — no package install required.
+    /// Hero "Quick Install" CTA — installs every missing/outdated component in one pass via the same
+    /// IInstallerService already used by the per-tile Install buttons (InstallComponentAsync above).
+    /// Progress streams to the command log automatically (ICommandRunner logs through ILogService
+    /// regardless of caller), so there is nothing extra to render here beyond a busy spinner.
     /// </summary>
-    [RelayCommand]
-    private async Task ConfigureJavaHomeAsync()
+    [RelayCommand(CanExecute = nameof(CanQuickInstall))]
+    private async Task QuickInstallAsync()
     {
-        IsConfiguringJavaHome = true;
-        JavaHomeConfigureMessage = null;
+        _quickInstallCts.Cancel();
+        _quickInstallCts = new CancellationTokenSource();
+        var ct = _quickInstallCts.Token;
+
+        IsQuickInstalling = true;
+        QuickInstallCommand.NotifyCanExecuteChanged();
+        RescanCommand.NotifyCanExecuteChanged();
+
         try
         {
-            var resolved = await _envManager.TryConfigureJavaHomeAsync();
-            if (resolved is null)
-                JavaHomeConfigureMessage = Strings.DashboardNoExistingInstallFound;
+            await foreach (var _ in _installer.InstallAllAsync(ct))
+            {
+                // Steps are surfaced through the command log; nothing to render on the dashboard.
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Non-fatal — fall through to a re-scan so the dashboard reflects whatever state resulted.
         }
         finally
         {
-            IsConfiguringJavaHome = false;
+            IsQuickInstalling = false;
+            QuickInstallCommand.NotifyCanExecuteChanged();
         }
 
-        await ScanAsync(clearConfigureMessages: false);
+        await RescanAsync();
     }
 
-    /// <summary>
-    /// Looks for an Android SDK already installed at the platform default location (e.g. via
-    /// Android Studio) and, if found, points ANDROID_HOME at it — no package install required.
-    /// </summary>
+    private bool CanQuickInstall() => !IsQuickInstalling && !IsScanning;
+
     [RelayCommand]
-    private async Task ConfigureAndroidHomeAsync()
-    {
-        IsConfiguringAndroidHome = true;
-        AndroidHomeConfigureMessage = null;
-        try
-        {
-            var resolved = await _envManager.TryConfigureAndroidHomeAsync();
-            if (resolved is null)
-                AndroidHomeConfigureMessage = Strings.DashboardNoExistingInstallFound;
-        }
-        finally
-        {
-            IsConfiguringAndroidHome = false;
-        }
-
-        await ScanAsync(clearConfigureMessages: false);
-    }
+    private void AdvancedInstall() => AdvancedInstallRequested?.Invoke();
 
     /// <summary>
     /// Installs a single component via the shared installer, then re-scans so the dashboard reflects
@@ -243,5 +218,7 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
     {
         _scanCts.Cancel();
         _scanCts.Dispose();
+        _quickInstallCts.Cancel();
+        _quickInstallCts.Dispose();
     }
 }

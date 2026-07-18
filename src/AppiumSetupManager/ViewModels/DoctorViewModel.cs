@@ -19,6 +19,11 @@ public partial class DoctorViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool   _isRunning;
     [ObservableProperty] private string _summaryText = string.Empty;
 
+    // ── Hero card ─────────────────────────────────────────────────────────────
+    [ObservableProperty] private double _healthScorePercent;
+    [ObservableProperty] private string _heroHeadline = string.Empty;
+    [ObservableProperty] private string _heroDescription = string.Empty;
+
     private bool CanRerun() => !IsRunning;
 
     // Invalidate all Fix button CanExecute guards whenever IsRunning flips.
@@ -118,6 +123,14 @@ public partial class DoctorViewModel : ObservableObject, IDisposable
         var passed = Checks.Count(c => c.Result == CheckResult.Pass);
         var total  = Checks.Count;
         SummaryText = string.Format(Strings.DoctorSummaryFormat, passed, total);
+
+        HealthScorePercent = total > 0 ? 100.0 * passed / total : 0;
+        HeroHeadline = string.Format(Strings.DoctorHeroHeadlineFormat, (int)Math.Round(HealthScorePercent));
+
+        var failing = total - passed;
+        HeroDescription = failing == 0
+            ? Strings.DoctorHeroAllClear
+            : string.Format(Strings.DoctorHeroIssuesFormat, failing);
     }
 
     public void Dispose()

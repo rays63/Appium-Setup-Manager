@@ -1,9 +1,18 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Font families. Inter is embedded via .WithInterFont(); falls back to system UI font. -->
+    <!-- Font families.
+         Inter is embedded via .WithInterFont() in Program.cs and remains available for any
+         not-yet-reskinned screen that still references it directly; it is no longer the
+         Window default (see HeadingFont/BodyFont below).
+         HeadingFont/BodyFont back Visual Redesign R1's "Organic" type system:
+           - Caprasimo (single 400 weight file) for display/heading text.
+           - Figtree (variable-weight file) for body text — Avalonia/Skia reads the
+             weight axis directly, so FontWeight setters (SemiBold/Bold) still apply. -->
     <FontFamily x:Key="InterFont">Inter, $Default</FontFamily>
-    <FontFamily x:Key="MonoFont">JetBrains Mono, Cascadia Code, Menlo, Consolas, monospace</FontFamily>
+    <FontFamily x:Key="HeadingFont">avares://AppiumSetupManager/Assets/Fonts/Caprasimo#Caprasimo, $Default</FontFamily>
+    <FontFamily x:Key="BodyFont">avares://AppiumSetupManager/Assets/Fonts/Figtree#Figtree, $Default</FontFamily>
+    <FontFamily x:Key="MonoFont">Menlo, Cascadia Code, Consolas, monospace</FontFamily>
 
     <!-- Type scale -->
     <x:Double x:Key="FontSizeHeadlineLg">30</x:Double>

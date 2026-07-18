@@ -9,6 +9,15 @@ public interface IInstallerService
 {
     IAsyncEnumerable<InstallStep> InstallAllAsync(CancellationToken ct = default);
     IAsyncEnumerable<InstallStep> InstallSelectedAsync(IEnumerable<string> componentNames, CancellationToken ct = default);
+
+    /// <summary>
+    /// Re-runs the install command for each named component regardless of whether DetectionService
+    /// currently reports it as Found — unlike <see cref="InstallSelectedAsync"/>, which is correct to
+    /// skip Found components for the Install screen's purposes. This is what lets the Updates screen
+    /// actually re-run an already-installed-but-outdated-on-npm component (e.g. Appium) instead of the
+    /// step silently coming back Skipped. Only NotApplicable entries are skipped here.
+    /// </summary>
+    IAsyncEnumerable<InstallStep> UpdateSelectedAsync(IEnumerable<string> componentNames, CancellationToken ct = default);
 }
 
 public sealed class InstallerService : IInstallerService
@@ -17,17 +26,20 @@ public sealed class InstallerService : IInstallerService
     private readonly IPlatformAdapter _platform;
     private readonly IEnvironmentVariableManager _envManager;
     private readonly IDetectionService _detection;
+    private readonly IHistoryService _history;
 
     public InstallerService(
         ICommandRunner runner,
         IPlatformAdapter platform,
         IEnvironmentVariableManager envManager,
-        IDetectionService detection)
+        IDetectionService detection,
+        IHistoryService history)
     {
         _runner = runner;
         _platform = platform;
         _envManager = envManager;
         _detection = detection;
+        _history = history;
     }
 
     // ── Public methods ───────────────────────────────────────────────────────
@@ -37,7 +49,7 @@ public sealed class InstallerService : IInstallerService
     {
         var scan = await _detection.ScanAllAsync(ct).ConfigureAwait(false);
         var skipSet = GetSkipSet(scan);
-        await foreach (var step in ExecuteStepsAsync(InstallCatalog.All, skipSet, ct).WithCancellation(ct))
+        await foreach (var step in ExecuteStepsAsync(InstallCatalog.All, skipSet, HistoryEntryType.Install, ct).WithCancellation(ct))
             yield return step;
     }
 
@@ -49,7 +61,19 @@ public sealed class InstallerService : IInstallerService
         var skipSet = GetSkipSet(scan);
         var nameSet = new HashSet<string>(componentNames, StringComparer.Ordinal);
         var filtered = InstallCatalog.All.Where(e => nameSet.Contains(e.ComponentName));
-        await foreach (var step in ExecuteStepsAsync(filtered, skipSet, ct).WithCancellation(ct))
+        await foreach (var step in ExecuteStepsAsync(filtered, skipSet, HistoryEntryType.Install, ct).WithCancellation(ct))
+            yield return step;
+    }
+
+    public async IAsyncEnumerable<InstallStep> UpdateSelectedAsync(
+        IEnumerable<string> componentNames,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var scan = await _detection.ScanAllAsync(ct).ConfigureAwait(false);
+        var skipSet = GetUpdateSkipSet(scan);
+        var nameSet = new HashSet<string>(componentNames, StringComparer.Ordinal);
+        var filtered = InstallCatalog.All.Where(e => nameSet.Contains(e.ComponentName));
+        await foreach (var step in ExecuteStepsAsync(filtered, skipSet, HistoryEntryType.Update, ct).WithCancellation(ct))
             yield return step;
     }
 
@@ -67,28 +91,35 @@ public sealed class InstallerService : IInstallerService
         return entry.LinuxCommand;
     }
 
+    // Skip set for InstallSelectedAsync/InstallAllAsync: a component already Found (or simply
+    // NotApplicable on this platform) needs no install step.
+    private static HashSet<string> GetSkipSet(IReadOnlyList<ComponentStatus> scan) =>
+        BuildSkipSet(scan, skipFound: true);
+
+    // Skip set for UpdateSelectedAsync: NEVER skip a Found component here — a Found component may
+    // still be outdated per a live npm registry check the Updates screen already performed, and the
+    // whole point of "Update" is to re-run the install command in that case. Only genuinely
+    // NotApplicable entries (e.g. iOS-only components on Windows/Linux) are skipped.
+    private static HashSet<string> GetUpdateSkipSet(IReadOnlyList<ComponentStatus> scan) =>
+        BuildSkipSet(scan, skipFound: false);
+
     // Some catalog entries use a user-facing name that differs from the DetectionService probe
     // that actually verifies they're present — "JDK 21" is satisfied once the "JDK" probe reports
-    // Found; "Android SDK" is satisfied once "ADB" does. Without this alias, GetSkipSet can never
+    // Found; "Android SDK" is satisfied once "ADB" does. Without this alias, a skip set can never
     // match these two entries against a scan, so they'd be re-installed on every run even when
     // already present (e.g. "Update" on an already-current ADB re-running the whole SDK cask install
-    // for no reason every single time).
-    private static readonly Dictionary<string, string> SkipCheckAlias = new(StringComparer.Ordinal)
-    {
-        ["JDK 21"]      = "JDK",
-        ["Android SDK"] = "ADB",
-    };
-
-    private static HashSet<string> GetSkipSet(IReadOnlyList<ComponentStatus> scan)
+    // for no reason every single time). The alias itself now lives on InstallCatalog so the Updates
+    // screen's own catalog-name↔detection-name resolution shares the exact same source of truth.
+    private static HashSet<string> BuildSkipSet(IReadOnlyList<ComponentStatus> scan, bool skipFound)
     {
         var set = new HashSet<string>(StringComparer.Ordinal);
         foreach (var status in scan)
         {
-            if (status.State == DetectionState.Found || status.State == DetectionState.NotApplicable)
+            if (status.State == DetectionState.NotApplicable || (skipFound && status.State == DetectionState.Found))
                 set.Add(status.Name);
         }
 
-        foreach (var (catalogName, detectionName) in SkipCheckAlias)
+        foreach (var (catalogName, detectionName) in InstallCatalog.DetectionNameAlias)
         {
             if (set.Contains(detectionName))
                 set.Add(catalogName);
@@ -100,8 +131,13 @@ public sealed class InstallerService : IInstallerService
     private async IAsyncEnumerable<InstallStep> ExecuteStepsAsync(
         IEnumerable<CatalogEntry> entries,
         HashSet<string> skipSet,
+        HistoryEntryType entryType,
         [EnumeratorCancellation] CancellationToken ct)
     {
+        // "Installed Appium" / "Updated Appium" / "Failed to install Appium" / "Failed to update Appium".
+        var verb = entryType == HistoryEntryType.Update ? "update" : "install";
+        var verbPast = entryType == HistoryEntryType.Update ? "Updated" : "Installed";
+
         foreach (var entry in entries)
         {
             if (ct.IsCancellationRequested)
@@ -147,6 +183,9 @@ public sealed class InstallerService : IInstallerService
 
             if (result.TimedOut)
             {
+                try { await _history.RecordAsync(entryType, $"Failed to {verb} {entry.ComponentName}", "Installation timed out after 10 minutes", null, ct).ConfigureAwait(false); }
+                catch { /* swallow — non-fatal history-write failure */ }
+
                 yield return new InstallStep(entry.ComponentName, command, InstallStepState.Failed,
                     "Installation timed out after 10 minutes", entry.SuggestedFix);
                 continue;
@@ -154,6 +193,9 @@ public sealed class InstallerService : IInstallerService
 
             if (!result.Success)
             {
+                try { await _history.RecordAsync(entryType, $"Failed to {verb} {entry.ComponentName}", result.StdErr, null, ct).ConfigureAwait(false); }
+                catch { /* swallow — non-fatal history-write failure */ }
+
                 yield return new InstallStep(entry.ComponentName, command, InstallStepState.Failed,
                     result.StdErr, entry.SuggestedFix);
                 continue;
@@ -189,6 +231,9 @@ public sealed class InstallerService : IInstallerService
                 }
                 catch { /* swallow — non-fatal PATH update failure */ }
             }
+
+            try { await _history.RecordAsync(entryType, $"{verbPast} {entry.ComponentName}", null, null, ct).ConfigureAwait(false); }
+            catch { /* swallow — non-fatal history-write failure */ }
 
             yield return new InstallStep(entry.ComponentName, command, InstallStepState.Done, null, null);
         }

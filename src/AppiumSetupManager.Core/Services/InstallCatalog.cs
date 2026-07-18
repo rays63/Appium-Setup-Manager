@@ -8,11 +8,24 @@ public sealed record CatalogEntry(
     bool MacOnly,
     string? PostInstallEnvVar,
     string? PostInstallPathDir,
-    string? SuggestedFix
+    string? SuggestedFix,
+    string? NpmPackageName = null
 );
 
 public static class InstallCatalog
 {
+    // Some catalog entries use a user-facing name that differs from the DetectionService probe
+    // that actually verifies they're present — "JDK 21" is satisfied once the "JDK" probe reports
+    // Found; "Android SDK" is satisfied once "ADB" does. Without this alias, name-matching against
+    // a scan can never match these two entries (e.g. GetSkipSet in InstallerService, or the Updates
+    // screen resolving a catalog entry to its ComponentStatus), so they'd be treated as never
+    // installed/never updateable even when already present.
+    public static readonly Dictionary<string, string> DetectionNameAlias = new(StringComparer.Ordinal)
+    {
+        ["JDK 21"]      = "JDK",
+        ["Android SDK"] = "ADB",
+    };
+
     public static readonly IReadOnlyList<CatalogEntry> All = new List<CatalogEntry>
     {
         // macOS-only prerequisites, in dependency order: Xcode CLI Tools must exist before
@@ -59,7 +72,8 @@ public static class InstallCatalog
             MacOnly:            false,
             PostInstallEnvVar:  null,
             PostInstallPathDir: null,
-            SuggestedFix:       "npm is installed with Node.js — reinstall Node.js to fix"
+            SuggestedFix:       "npm is installed with Node.js — reinstall Node.js to fix",
+            NpmPackageName:     "npm"
         ),
 
         new CatalogEntry(
@@ -92,7 +106,8 @@ public static class InstallCatalog
             MacOnly:            false,
             PostInstallEnvVar:  null,
             PostInstallPathDir: null,
-            SuggestedFix:       "Ensure Node.js and npm are installed, then retry"
+            SuggestedFix:       "Ensure Node.js and npm are installed, then retry",
+            NpmPackageName:     "appium"
         ),
 
         new CatalogEntry(
@@ -103,7 +118,8 @@ public static class InstallCatalog
             MacOnly:            false,
             PostInstallEnvVar:  null,
             PostInstallPathDir: null,
-            SuggestedFix:       "Ensure Appium server is installed first"
+            SuggestedFix:       "Ensure Appium server is installed first",
+            NpmPackageName:     "appium-uiautomator2-driver"
         ),
 
         new CatalogEntry(
@@ -114,7 +130,8 @@ public static class InstallCatalog
             MacOnly:            true,
             PostInstallEnvVar:  null,
             PostInstallPathDir: null,
-            SuggestedFix:       "Ensure Appium server is installed and Xcode CLI Tools are present"
+            SuggestedFix:       "Ensure Appium server is installed and Xcode CLI Tools are present",
+            NpmPackageName:     "appium-xcuitest-driver"
         ),
 
         new CatalogEntry(

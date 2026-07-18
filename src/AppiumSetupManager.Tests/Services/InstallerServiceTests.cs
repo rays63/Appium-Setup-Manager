@@ -62,17 +62,22 @@ public class InstallerServiceTests
         return d;
     }
 
+    private static IHistoryService DefaultHistory() =>
+        Substitute.For<IHistoryService>();
+
     private static InstallerService CreateService(
         ICommandRunner? runner = null,
         IPlatformAdapter? platform = null,
         IEnvironmentVariableManager? envManager = null,
-        IDetectionService? detection = null)
+        IDetectionService? detection = null,
+        IHistoryService? history = null)
     {
         return new InstallerService(
             runner    ?? DefaultRunner(),
             platform  ?? MacPlatform(),
             envManager ?? DefaultEnvManager(),
-            detection ?? MockDetection());
+            detection ?? MockDetection(),
+            history   ?? DefaultHistory());
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -325,6 +330,72 @@ public class InstallerServiceTests
 
         var sut = CreateService(detection: detection);
         var steps = await CollectAsync(sut.InstallSelectedAsync(new[] { "Appium" }));
+
+        var names = steps.Select(s => s.ComponentName).Distinct().ToList();
+        names.Should().ContainSingle().Which.Should().Be("Appium");
+    }
+
+    // ── UpdateSelectedAsync vs InstallSelectedAsync skip-logic contrast ────────
+    //
+    // These two tests use the exact same "Appium is Found" scan to make the behavioral difference
+    // between the two methods explicit: InstallSelectedAsync is correct to skip a Found component
+    // (the Install screen has nothing to do once something's already present), but
+    // UpdateSelectedAsync must NEVER skip a Found component — the whole point of the Updates screen
+    // is to re-check/re-run an install command for something that's already installed but may be
+    // outdated per a live npm version check the ViewModel performed. Before this fix, both methods
+    // shared the same skip set and "Update" on an already-Found-but-npm-outdated component (e.g.
+    // Appium) silently no-op'ed via a Skipped step.
+
+    [Fact]
+    public async Task InstallSelected_FoundComponent_EmitsSkipped()
+    {
+        var runner = DefaultRunner();
+        var detection = MockDetection(("Appium", DetectionState.Found));
+
+        var sut = CreateService(runner: runner, detection: detection);
+        var steps = await CollectAsync(sut.InstallSelectedAsync(new[] { "Appium" }));
+
+        steps.Should().ContainSingle().Which.State.Should().Be(InstallStepState.Skipped);
+        await runner.DidNotReceive().RunAsync("npm", Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateSelected_FoundComponent_DoesNotSkip_RunsInstallCommand()
+    {
+        var runner = DefaultRunner();
+        var detection = MockDetection(("Appium", DetectionState.Found));
+
+        var sut = CreateService(runner: runner, detection: detection);
+        var steps = await CollectAsync(sut.UpdateSelectedAsync(new[] { "Appium" }));
+
+        steps.Should().NotContain(s => s.State == InstallStepState.Skipped);
+        steps.Should().Contain(s => s.ComponentName == "Appium" && s.State == InstallStepState.Done);
+        await runner.Received(1).RunAsync("npm", "install -g appium", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateSelected_NotApplicableComponent_StillSkipped()
+    {
+        // NotApplicable (e.g. an iOS-only component on a non-mac platform) must still be skipped by
+        // UpdateSelectedAsync — only Found is exempted from the skip set, per the fix above.
+        var platform = WindowsPlatform();
+        var detection = MockDetection(); // all Found by default; XCUITest Driver is MacOnly so its
+                                          // command resolves to null on Windows regardless of state.
+
+        var sut = CreateService(platform: platform, detection: detection);
+        var steps = await CollectAsync(sut.UpdateSelectedAsync(new[] { "XCUITest Driver" }));
+
+        // Null command on this platform means the entry is silently omitted — no steps at all.
+        steps.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task UpdateSelected_FiltersToNamedComponent()
+    {
+        var detection = MockDetection(("Appium", DetectionState.Found));
+
+        var sut = CreateService(detection: detection);
+        var steps = await CollectAsync(sut.UpdateSelectedAsync(new[] { "Appium" }));
 
         var names = steps.Select(s => s.ComponentName).Distinct().ToList();
         names.Should().ContainSingle().Which.Should().Be("Appium");

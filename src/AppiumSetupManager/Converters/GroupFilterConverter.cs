@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace AppiumSetupManager.ViewModels;
+namespace AppiumSetupManager.Converters;
 
 public sealed class GroupFilterConverter : IValueConverter
 {

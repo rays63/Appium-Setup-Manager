@@ -101,7 +101,7 @@ public sealed partial class DetectionService : IDetectionService
 
             var state = ClassifyVersion(result.StdOut.Trim(), 18);
             return new ComponentStatus(name, state, result.StdOut.Trim(),
-                state == DetectionState.Outdated ? "18" : null, null, null);
+                state == DetectionState.Outdated ? "18" : null, _platform.LocateExecutable("node"), null);
         }
         catch (OperationCanceledException)
         {
@@ -120,7 +120,7 @@ public sealed partial class DetectionService : IDetectionService
 
             var state = ClassifyVersion(result.StdOut.Trim(), 9);
             return new ComponentStatus(name, state, result.StdOut.Trim(),
-                state == DetectionState.Outdated ? "9" : null, null, null);
+                state == DetectionState.Outdated ? "9" : null, _platform.LocateExecutable("npm"), null);
         }
         catch (OperationCanceledException)
         {

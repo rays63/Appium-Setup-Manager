@@ -15,6 +15,7 @@ public sealed partial class DoctorService : IDoctorService
 {
     private readonly ICommandRunner _runner;
     private readonly IPlatformAdapter _platform;
+    private readonly IHistoryService _history;
 
     // ── Compiled regex fields ────────────────────────────────────────────────
 
@@ -29,10 +30,11 @@ public sealed partial class DoctorService : IDoctorService
 
     // ── Constructor ──────────────────────────────────────────────────────────
 
-    public DoctorService(ICommandRunner runner, IPlatformAdapter platform)
+    public DoctorService(ICommandRunner runner, IPlatformAdapter platform, IHistoryService history)
     {
         _runner = runner;
         _platform = platform;
+        _history = history;
     }
 
     // ── Public entry point ───────────────────────────────────────────────────
@@ -83,7 +85,23 @@ public sealed partial class DoctorService : IDoctorService
 
         // Re-run the check probe
         var updated = await recheck(ct).ConfigureAwait(false);
-        return updated ?? Fail(checkName, "Unknown", "Re-check failed", null, false);
+        var result = updated ?? Fail(checkName, "Unknown", "Re-check failed", null, false);
+
+        // Reflect the TRUE post-recheck state in the history summary — running a fix command is not
+        // the same as it having worked, so a recheck that still fails must say so honestly rather than
+        // assuming success just because a fix command ran. A history-write failure is non-critical and
+        // must not break the repair flow itself.
+        try
+        {
+            await _history.RecordAsync(HistoryEntryType.Repair, $"Repaired {checkName}", result.Description, null, ct)
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+            // Swallowed — same convention as InstallerService's history-write calls.
+        }
+
+        return result;
     }
 
     // ── Private per-check methods ────────────────────────────────────────────

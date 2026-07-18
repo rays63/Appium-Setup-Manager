@@ -2,11 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ============================================================
-         Global window / text defaults (Inter + Midnight Slate)
+         Global window / text defaults (Organic sage — Figtree body / Caprasimo headings)
          FontFamily & Foreground are inherited down the visual tree.
          ============================================================ -->
     <Style Selector="Window">
-        <Setter Property="FontFamily" Value="{DynamicResource InterFont}" />
+        <Setter Property="FontFamily" Value="{DynamicResource BodyFont}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBodySm}" />
@@ -16,29 +16,35 @@
          Typography helpers
          ============================================================ -->
     <Style Selector="TextBlock.headline-lg">
+        <Setter Property="FontFamily" Value="{DynamicResource HeadingFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeHeadlineLg}" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
     </Style>
     <Style Selector="TextBlock.headline-md">
+        <Setter Property="FontFamily" Value="{DynamicResource HeadingFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeHeadlineMd}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
     </Style>
     <Style Selector="TextBlock.headline-sm">
+        <Setter Property="FontFamily" Value="{DynamicResource HeadingFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeHeadlineSm}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
     </Style>
     <Style Selector="TextBlock.body-md">
+        <Setter Property="FontFamily" Value="{DynamicResource BodyFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBodyMd}" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
     </Style>
     <Style Selector="TextBlock.body-sm">
+        <Setter Property="FontFamily" Value="{DynamicResource BodyFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBodySm}" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
     </Style>
     <Style Selector="TextBlock.label-caps">
+        <Setter Property="FontFamily" Value="{DynamicResource BodyFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeLabelCaps}" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
@@ -58,7 +64,7 @@
         <Setter Property="Background" Value="{DynamicResource SurfaceContainerBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineVariantBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="CornerRadius" Value="28" />
         <Setter Property="Padding" Value="16" />
         <Setter Property="Transitions">
             <Transitions>
@@ -91,6 +97,24 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
+    <!-- Outlined type tag — accent-colored 1px border + accent-colored text, no fill. Used by the
+         History screen's per-row Install/Update/Repair/Cleanup/Setup tags; distinct from Border.pill
+         (filled status background) and Border.chip (filled surface container). -->
+    <Style Selector="Border.tag-outline">
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Padding" Value="10,2" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Border.tag-outline > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeLabelCaps}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
     <!-- Status dot -->
     <Style Selector="Border.dot">
         <Setter Property="Width" Value="10" />
@@ -104,9 +128,9 @@
          ============================================================ -->
     <Style Selector="Button.primary">
         <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="999" />
         <Setter Property="Padding" Value="16,8" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBodySm}" />
@@ -114,11 +138,11 @@
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource PrimaryContainerHoverBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
     </Style>
     <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource PrimaryContainerPressedBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
     </Style>
     <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource SurfaceContainerHighestBrush}" />
@@ -131,7 +155,7 @@
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineVariantBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="999" />
         <Setter Property="Padding" Value="14,7" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBodySm}" />
         <Setter Property="Cursor" Value="Hand" />
@@ -151,7 +175,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="CornerRadius" Value="999" />
         <Setter Property="Padding" Value="8,4" />
         <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeCodeSm}" />
@@ -177,9 +201,9 @@
                 <Border x:Name="NavRoot"
                         Background="Transparent"
                         BorderBrush="Transparent"
-                        BorderThickness="3,0,0,0"
-                        CornerRadius="8"
-                        Padding="13,10">
+                        BorderThickness="0"
+                        CornerRadius="999"
+                        Padding="16,10">
                     <ContentPresenter Content="{TemplateBinding Content}"
                                       ContentTemplate="{TemplateBinding ContentTemplate}"
                                       Foreground="{TemplateBinding Foreground}"
@@ -194,10 +218,63 @@
     </Style>
     <Style Selector="RadioButton.nav:checked /template/ Border#NavRoot">
         <Setter Property="Background" Value="{DynamicResource NavActiveTintBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryContainerBrush}" />
     </Style>
     <Style Selector="RadioButton.nav:checked">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource NavActiveForegroundBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         Filter pills (Logs toolbar) — single-select RadioButtons restyled as
+         chips, following the RadioButton.nav retemplate pattern above: outlined
+         chip when idle, solid accent fill when checked.
+         ============================================================ -->
+    <Style Selector="RadioButton.filterpill">
+        <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBodySm}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border x:Name="PillRoot"
+                        Background="Transparent"
+                        BorderBrush="{DynamicResource OutlineVariantBrush}"
+                        BorderThickness="1"
+                        CornerRadius="999"
+                        Padding="14,5">
+                    <ContentPresenter Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Foreground="{TemplateBinding Foreground}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="RadioButton.filterpill:pointerover /template/ Border#PillRoot">
+        <Setter Property="Background" Value="{DynamicResource SurfaceContainerHighBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource OutlineBrush}" />
+    </Style>
+    <Style Selector="RadioButton.filterpill:checked /template/ Border#PillRoot">
+        <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryContainerBrush}" />
+    </Style>
+    <Style Selector="RadioButton.filterpill:checked">
+        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         Keyboard-shortcut key badge (Settings screen) — small accent-tinted
+         monospace chip, e.g. "⌘⇧I" / "Ctrl+Shift+I".
+         ============================================================ -->
+    <Style Selector="Border.keybadge">
+        <Setter Property="Background" Value="{DynamicResource PillInfoBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10,3" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.keybadge > TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCodeSm}" />
+        <Setter Property="Foreground" Value="{DynamicResource PillInfoForegroundBrush}" />
     </Style>
 
     <!-- Sidebar ghost rows (Settings / Support placeholders) -->
@@ -205,7 +282,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="999" />
         <Setter Property="Padding" Value="16,10" />
         <Setter Property="Margin" Value="0,2" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBodySm}" />
@@ -257,7 +334,7 @@
         <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource OutlineVariantBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="999" />
     </Style>
     <Style Selector="TextBox /template/ Border#PART_BorderElement">
         <Setter Property="Background" Value="{DynamicResource SurfaceContainerLowestBrush}" />
@@ -270,6 +347,21 @@
     <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
         <Setter Property="Background" Value="{DynamicResource SurfaceContainerLowestBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource PrimaryContainerBrush}" />
+    </Style>
+
+    <!-- Monospace variant, e.g. for editing raw environment variable values. -->
+    <Style Selector="TextBox.mono">
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCodeSm}" />
+    </Style>
+
+    <!-- ============================================================
+         Thin horizontal divider — used between rows in dense lists (e.g.
+         Environment screen's Toolchain Locations) instead of full card borders.
+         ============================================================ -->
+    <Style Selector="Border.divider">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource OutlineVariantBrush}" />
     </Style>
 
 </Styles>

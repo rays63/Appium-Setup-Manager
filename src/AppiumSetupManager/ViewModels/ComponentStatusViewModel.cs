@@ -30,6 +30,7 @@ public partial class ComponentStatusViewModel : ObservableObject
     public DetectionState State          { get; }
     public string         StatusLabel    { get; }
     public string?        VersionDisplay { get; }
+    public string?        RequiredVersionDisplay { get; }
     public string?        InstallPath    { get; }
     public bool           IsVisible      { get; }
 
@@ -105,6 +106,12 @@ public partial class ComponentStatusViewModel : ObservableObject
 
             _ => null,
         };
+
+        // Tile grid caption, e.g. "v18.2 · req 18+" — only rendered when a required version is
+        // actually known for this component (same field InstallMap/VersionDisplay already read).
+        RequiredVersionDisplay = status.RequiredVersion is not null
+            ? string.Format(Strings.DashboardRequiredVersionFormat, status.RequiredVersion)
+            : null;
     }
 
     [RelayCommand]

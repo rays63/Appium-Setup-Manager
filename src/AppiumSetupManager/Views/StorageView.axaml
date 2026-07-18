@@ -1,19 +1,211 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:AppiumSetupManager.ViewModels"
+             xmlns:converters="using:AppiumSetupManager.Converters"
+             xmlns:controls="using:AppiumSetupManager.Controls"
              xmlns:strings="using:AppiumSetupManager.Localization"
              x:Class="AppiumSetupManager.Views.StorageView"
              x:DataType="vm:StorageViewModel">
 
-    <StackPanel HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Spacing="10">
-        <TextBlock Classes="headline-md"
-                   HorizontalAlignment="Center"
-                   Text="{x:Static strings:Strings.NavStorage}" />
-        <TextBlock Classes="body-md muted"
-                   HorizontalAlignment="Center"
-                   Text="{x:Static strings:Strings.StoragePlaceholder}" />
-    </StackPanel>
+    <Panel>
+
+        <ScrollViewer>
+            <StackPanel Spacing="20" Margin="0,0,0,64">
+
+                <!-- ================= Hero card ================= -->
+                <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+
+                        <controls:RingChart Grid.Column="0"
+                                            Diameter="110"
+                                            StrokeThickness="13"
+                                            Margin="0,0,22,0"
+                                            VerticalAlignment="Center"
+                                            TrackBrush="{DynamicResource SurfaceContainerHighBrush}"
+                                            Segments="{Binding CategoryFractions, Converter={x:Static converters:FractionsToRingSegmentsConverter.Instance}}" />
+
+                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Classes="label-caps"
+                                       Foreground="{DynamicResource SecondaryBrush}"
+                                       Text="{x:Static strings:Strings.StorageHeroKicker}" />
+                            <TextBlock Classes="headline-md"
+                                       Text="{Binding TotalReclaimableGb, StringFormat={x:Static strings:Strings.StorageHeroHeadlineFormat}}" />
+                            <TextBlock Classes="body-sm muted" IsVisible="{Binding HasItems}">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{x:Static strings:Strings.StorageHeroAllClearFormat}">
+                                        <Binding Path="Items.Count" />
+                                        <Binding Path="CategoryCount" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                            <TextBlock Classes="body-sm muted"
+                                       Text="{x:Static strings:Strings.StorageEmptyStateBody}"
+                                       IsVisible="{Binding !HasItems}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Button Grid.Column="2"
+                                Classes="primary"
+                                VerticalAlignment="Top"
+                                Command="{Binding ScanCommand}"
+                                IsEnabled="{Binding !IsScanning}"
+                                AutomationProperties.Name="{x:Static strings:Strings.StorageScan}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Classes="spinner" Text="⟳" IsVisible="{Binding IsScanning}" />
+                                <TextBlock Text="{x:Static strings:Strings.StorageScan}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsScanning}" />
+
+                <!-- ================= Empty state ================= -->
+                <Border Classes="card" IsVisible="{Binding !HasItems}">
+                    <StackPanel Spacing="8" HorizontalAlignment="Center" Margin="0,20">
+                        <TextBlock Classes="headline-sm" HorizontalAlignment="Center"
+                                   Text="{x:Static strings:Strings.StorageEmptyStateTitle}" />
+                        <TextBlock Classes="body-sm muted" HorizontalAlignment="Center"
+                                   MaxWidth="420"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   Text="{x:Static strings:Strings.StorageEmptyStateBody}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ================= Item list ================= -->
+                <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding HasItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:StorageItemViewModel">
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                                  Margin="0,0,0,2"
+                                  Height="52">
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                          Command="{Binding ToggleSelectionCommand}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,14,0"
+                                          MinWidth="44" MinHeight="44"
+                                          AutomationProperties.Name="{Binding Name}" />
+
+                                <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                    <TextBlock Classes="body-md" FontWeight="SemiBold" Text="{Binding Name}" />
+                                    <TextBlock Classes="mono muted"
+                                               Text="{Binding Path}"
+                                               MaxWidth="420"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip.Tip="{Binding Path}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <!-- Icon + color risk tags — two mutually-exclusive siblings so each
+                                         keeps its own DynamicResource brushes (stays theme-reactive). -->
+                                    <Border Classes="pill"
+                                            Background="{DynamicResource PillInstalledBackgroundBrush}"
+                                            IsVisible="{Binding IsSafeToDelete}">
+                                        <TextBlock Classes="label-caps" Foreground="{DynamicResource SecondaryBrush}" Text="{Binding RiskTag}" />
+                                    </Border>
+                                    <Border Classes="pill"
+                                            Background="{DynamicResource PillWarnBackgroundBrush}"
+                                            IsVisible="{Binding !IsSafeToDelete}">
+                                        <TextBlock Classes="label-caps" Foreground="{DynamicResource TertiaryBrush}" Text="{Binding RiskTag}" />
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="3" Classes="mono" VerticalAlignment="Center" Text="{Binding SizeDisplay}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================= Sticky selection bar ================= -->
+        <Border VerticalAlignment="Bottom"
+                Classes="card"
+                IsVisible="{Binding HasSelection}"
+                Margin="0,0,0,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                    <TextBlock Classes="body-sm" FontWeight="SemiBold"
+                               Text="{Binding SelectedCount, StringFormat={x:Static strings:Strings.StorageSelectedCountFormat}}" />
+                    <TextBlock Classes="body-sm muted"
+                               Text="{Binding ReclaimGb, StringFormat={x:Static strings:Strings.StorageReclaimFormat}}" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="primary"
+                        Content="{x:Static strings:Strings.StoragePreview}"
+                        Command="{Binding OpenPreviewCommand}"
+                        AutomationProperties.Name="{x:Static strings:Strings.StoragePreview}" />
+            </Grid>
+        </Border>
+
+        <!-- ================= Preview / confirm cleanup modal ================= -->
+        <Border IsVisible="{Binding IsPreviewOpen}"
+                Background="#99000000">
+            <Border Classes="card"
+                    MaxWidth="480"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="14">
+                    <TextBlock Classes="headline-sm" Text="{x:Static strings:Strings.StoragePreviewTitle}" />
+                    <TextBlock Classes="body-sm muted" Text="{x:Static strings:Strings.StoragePreviewBody}" TextWrapping="Wrap" />
+
+                    <ScrollViewer MaxHeight="260">
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StorageItemViewModel">
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,4" IsVisible="{Binding IsSelected}">
+                                        <TextBlock Grid.Column="0" Classes="body-sm" Text="{Binding Name}" />
+                                        <TextBlock Grid.Column="1" Classes="mono muted" Text="{Binding SizeDisplay}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Classes="body-sm"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding ReclaimGb, StringFormat={x:Static strings:Strings.StorageReclaimFormat}}" />
+                        <Button Grid.Column="1"
+                                Classes="secondary"
+                                Margin="0,0,8,0"
+                                Content="{x:Static strings:Strings.StorageCancelPreview}"
+                                Command="{Binding CancelPreviewCommand}"
+                                AutomationProperties.Name="{x:Static strings:Strings.StorageCancelPreview}" />
+                        <Button Grid.Column="2"
+                                Classes="primary"
+                                Command="{Binding ConfirmCleanupCommand}"
+                                IsEnabled="{Binding !IsCleaning}"
+                                AutomationProperties.Name="{x:Static strings:Strings.StorageConfirmCleanup}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Classes="spinner" Text="⟳" IsVisible="{Binding IsCleaning}" />
+                                <TextBlock Text="{x:Static strings:Strings.StorageConfirmCleanup}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ================= Success toast ================= -->
+        <Border IsVisible="{Binding ToastMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                Classes="card"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+                <TextBlock Classes="body-sm" Text="{Binding ToastMessage}" />
+                <Button Classes="ghosticon"
+                        Content="{x:Static strings:Strings.StorageDismiss}"
+                        Command="{Binding DismissToastCommand}"
+                        AutomationProperties.Name="{x:Static strings:Strings.StorageDismiss}" />
+            </StackPanel>
+        </Border>
+
+    </Panel>
 
 </UserControl>

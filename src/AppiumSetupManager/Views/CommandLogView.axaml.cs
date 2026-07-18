@@ -17,16 +17,18 @@ public partial class CommandLogView : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        // Entries is now a ReadOnlyObservableCollection (shared LogBuffer), which only exposes
+        // CollectionChanged through the INotifyCollectionChanged interface.
         if (_subscribedVm is not null)
         {
-            _subscribedVm.Entries.CollectionChanged -= OnEntriesChanged;
+            ((INotifyCollectionChanged)_subscribedVm.Entries).CollectionChanged -= OnEntriesChanged;
             _subscribedVm = null;
         }
 
         if (DataContext is CommandLogViewModel vm)
         {
             _subscribedVm = vm;
-            vm.Entries.CollectionChanged += OnEntriesChanged;
+            ((INotifyCollectionChanged)vm.Entries).CollectionChanged += OnEntriesChanged;
         }
     }
 

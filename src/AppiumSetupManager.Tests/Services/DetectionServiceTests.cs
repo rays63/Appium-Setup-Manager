@@ -21,6 +21,7 @@ public class DetectionServiceTests
         p.IsWindows.Returns(false);
         p.IsLinux.Returns(false);
         p.HomeDirectory.Returns("/Users/testuser");
+        p.LocateExecutable(Arg.Any<string>()).Returns(ci => $"/usr/local/bin/{ci.Arg<string>()}");
         return p;
     }
 
@@ -31,6 +32,7 @@ public class DetectionServiceTests
         p.IsWindows.Returns(false);
         p.IsLinux.Returns(true);
         p.HomeDirectory.Returns("/home/testuser");
+        p.LocateExecutable(Arg.Any<string>()).Returns(ci => $"/usr/local/bin/{ci.Arg<string>()}");
         return p;
     }
 
@@ -105,6 +107,24 @@ public class DetectionServiceTests
         var node = results.Single(r => r.Name == "Node.js");
         node.State.Should().Be(DetectionState.Found);
         node.InstalledVersion.Should().Be("v20.11.0");
+        node.InstallPath.Should().Be("/usr/local/bin/node");
+    }
+
+    [Fact]
+    public async Task ProbeNpm_KnownGoodOutput_ReturnsFoundWithInstallPath()
+    {
+        var runner = CreateRunner();
+        var platform = NonMacPlatform();
+        WireAllInstantMocks(runner, platform);
+        runner.RunAsync("npm", "--version", Arg.Any<CancellationToken>())
+              .Returns(OkResult("10.2.4"));
+
+        var sut = new DetectionService(runner, platform);
+        var results = await sut.ScanAllAsync();
+
+        var npm = results.Single(r => r.Name == "npm");
+        npm.State.Should().Be(DetectionState.Found);
+        npm.InstallPath.Should().Be("/usr/local/bin/npm");
     }
 
     [Fact]

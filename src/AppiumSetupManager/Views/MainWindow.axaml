@@ -22,57 +22,33 @@
 
             <DockPanel LastChildFill="True">
 
-                <!-- Brand block -->
-                <StackPanel DockPanel.Dock="Top" Margin="20,22,20,18">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Border Width="36" Height="36"
-                                CornerRadius="8"
-                                Background="{DynamicResource PrimaryContainerBrush}"
-                                VerticalAlignment="Center">
-                            <TextBlock Text="{x:Static strings:Strings.BrandBadge}"
-                                       Foreground="White"
-                                       FontWeight="Bold"
-                                       FontSize="18"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel VerticalAlignment="Center" Spacing="1">
-                            <TextBlock Classes="headline-sm"
-                                       Text="{x:Static strings:Strings.BrandName}" />
-                            <TextBlock Classes="label-caps"
-                                       Foreground="{DynamicResource PrimaryBrush}"
-                                       Text="{x:Static strings:Strings.BrandSubtitle}" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Bottom: Settings / Support placeholders -->
+                <!-- Bottom: Settings (pinned) -->
                 <StackPanel DockPanel.Dock="Bottom" Margin="12,8,12,16" Spacing="0">
                     <Border Height="1"
                             Background="{DynamicResource OutlineVariantBrush}"
                             Margin="4,0,4,10" />
-                    <Button Classes="navghost"
-                            AutomationProperties.Name="Settings">
+                    <RadioButton x:Name="NavSettingsButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToSettingsCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Settings}"
+                                 AutomationProperties.Name="Navigate to Settings">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="{x:Static strings:Strings.NavSettingsGlyph}"
-                                       Width="20" TextAlignment="Center" VerticalAlignment="Center" />
-                            <TextBlock Text="{x:Static strings:Strings.NavSettings}"
-                                       VerticalAlignment="Center" />
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Fill="Transparent"
+                                  Width="17" Height="17"
+                                  Stretch="Uniform"
+                                  Data="{StaticResource IconSettings}" />
+                            <TextBlock Text="{x:Static strings:Strings.NavSettings}" VerticalAlignment="Center" />
                         </StackPanel>
-                    </Button>
-                    <Button Classes="navghost"
-                            AutomationProperties.Name="Support">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="{x:Static strings:Strings.NavSupportGlyph}"
-                                       Width="20" TextAlignment="Center" VerticalAlignment="Center" />
-                            <TextBlock Text="{x:Static strings:Strings.NavSupport}"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    </RadioButton>
                 </StackPanel>
 
                 <!-- Nav list -->
-                <StackPanel Margin="12,4,12,8" Spacing="0">
+                <StackPanel Margin="12,20,12,8" Spacing="0">
 
                     <RadioButton x:Name="NavDashboardButton"
                                  Classes="nav"
@@ -81,8 +57,10 @@
                                  IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Dashboard}"
                                  AutomationProperties.Name="Navigate to Dashboard">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="{x:Static strings:Strings.NavDashboardGlyph}"
-                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconDashboard}" />
                             <TextBlock Text="{x:Static strings:Strings.NavDashboard}" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
@@ -94,8 +72,10 @@
                                  IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Install}"
                                  AutomationProperties.Name="Navigate to Install">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="{x:Static strings:Strings.NavInstallGlyph}"
-                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconInstallation}" />
                             <TextBlock Text="{x:Static strings:Strings.NavInstall}" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
@@ -107,9 +87,26 @@
                                  IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Doctor}"
                                  AutomationProperties.Name="Navigate to Doctor">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="{x:Static strings:Strings.NavDoctorGlyph}"
-                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconDoctor}" />
                             <TextBlock Text="{x:Static strings:Strings.NavDoctor}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavEnvironmentButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToEnvironmentCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Environment}"
+                                 AutomationProperties.Name="Navigate to Environment">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconEnvironment}" />
+                            <TextBlock Text="{x:Static strings:Strings.NavEnvironment}" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
 
@@ -120,9 +117,56 @@
                                  IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Storage}"
                                  AutomationProperties.Name="Navigate to Storage">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="{x:Static strings:Strings.NavStorageGlyph}"
-                                       FontSize="16" Width="20" TextAlignment="Center" VerticalAlignment="Center" />
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconStorage}" />
                             <TextBlock Text="{x:Static strings:Strings.NavStorage}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavUpdatesButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToUpdatesCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Updates}"
+                                 AutomationProperties.Name="Navigate to Updates">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconUpdates}" />
+                            <TextBlock Text="{x:Static strings:Strings.NavUpdates}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavHistoryButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToHistoryCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=History}"
+                                 AutomationProperties.Name="Navigate to History">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconHistory}" />
+                            <TextBlock Text="{x:Static strings:Strings.NavHistory}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavLogsButton"
+                                 Classes="nav"
+                                 GroupName="Nav"
+                                 Command="{Binding NavigateToLogsCommand}"
+                                 IsChecked="{Binding ActiveNav, Mode=TwoWay, Converter={x:Static conv:NavActiveConverter.Instance}, ConverterParameter=Logs}"
+                                 AutomationProperties.Name="Navigate to Logs">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Path Stroke="{Binding $parent[RadioButton].Foreground}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconLogs}" />
+                            <TextBlock Text="{x:Static strings:Strings.NavLogs}" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
 
@@ -148,38 +192,85 @@
                     Padding="24,14">
                 <Grid ColumnDefinitions="Auto,Auto,*,Auto">
 
-                    <TextBlock Grid.Column="0"
-                               Classes="headline-md"
-                               Text="{x:Static strings:Strings.TopBarTitle}"
-                               VerticalAlignment="Center" />
-
-                    <StackPanel Grid.Column="1"
+                    <!-- Brand mark -->
+                    <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
-                                Spacing="8"
-                                Margin="20,0,0,0"
+                                Spacing="10"
                                 VerticalAlignment="Center">
-                        <Border Classes="chip">
-                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <Border Classes="dot" Width="8" Height="8"
-                                        Background="{DynamicResource SecondaryBrush}" />
-                                <TextBlock Classes="body-sm muted"
-                                           Text="{x:Static strings:Strings.TopBarClusterStatus}"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="chip">
-                            <TextBlock Classes="body-sm muted"
-                                       Text="{x:Static strings:Strings.TopBarActiveNodes}"
+                        <Border Width="32" Height="32"
+                                CornerRadius="10"
+                                Background="{DynamicResource PrimaryContainerBrush}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{x:Static strings:Strings.BrandBadge}"
+                                       Foreground="{DynamicResource OnPrimaryBrush}"
+                                       FontFamily="{DynamicResource HeadingFont}"
+                                       FontSize="16"
+                                       HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </Border>
+                        <TextBlock Classes="headline-sm"
+                                   VerticalAlignment="Center"
+                                   Text="{x:Static strings:Strings.AppTitle}" />
                     </StackPanel>
 
-                    <TextBox Grid.Column="3"
-                             Width="240"
-                             VerticalAlignment="Center"
-                             Watermark="{x:Static strings:Strings.TopBarSearchPlaceholder}"
-                             AutomationProperties.Name="Search"
-                             IsTabStop="True" />
+                    <!-- Search -->
+                    <Grid Grid.Column="1"
+                          Margin="28,0,0,0"
+                          MaxWidth="360"
+                          VerticalAlignment="Center">
+                        <Path Stroke="{DynamicResource OnSurfaceVariantBrush}"
+                              StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                              Fill="Transparent" Width="15" Height="15" Stretch="Uniform"
+                              HorizontalAlignment="Left"
+                              Margin="14,0,0,0"
+                              IsHitTestVisible="False"
+                              Data="{StaticResource IconSearch}" />
+                        <TextBox x:Name="TopBarSearchBox"
+                                 MinWidth="280"
+                                 Padding="38,7,14,7"
+                                 Watermark="{x:Static strings:Strings.TopBarSearchPlaceholder}"
+                                 AutomationProperties.Name="{x:Static strings:Strings.TopBarSearch}"
+                                 IsTabStop="True" />
+                    </Grid>
+
+                    <!-- flexible spacer is Grid.Column 2 -->
+
+                    <StackPanel Grid.Column="3"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                VerticalAlignment="Center">
+
+                        <Button Classes="ghosticon"
+                                Width="36" Height="36"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding ToggleThemeCommand}"
+                                AutomationProperties.Name="{x:Static strings:Strings.TopBarToggleTheme}">
+                            <Panel>
+                                <Path Stroke="{DynamicResource OnSurfaceVariantBrush}"
+                                      StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                      Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                      IsVisible="{Binding ActiveTheme, Converter={x:Static conv:ThemeModeEqualsConverter.Instance}, ConverterParameter=Light}"
+                                      Data="{StaticResource IconSun}" />
+                                <Path Stroke="{DynamicResource OnSurfaceVariantBrush}"
+                                      StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                      Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                      IsVisible="{Binding ActiveTheme, Converter={x:Static conv:ThemeModeEqualsConverter.Instance}, ConverterParameter=Dark}"
+                                      Data="{StaticResource IconMoon}" />
+                            </Panel>
+                        </Button>
+
+                        <Button Classes="ghosticon"
+                                Width="36" Height="36"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding NavigateToSettingsCommand}"
+                                AutomationProperties.Name="{x:Static strings:Strings.TopBarSettings}">
+                            <Path Stroke="{DynamicResource OnSurfaceVariantBrush}"
+                                  StrokeThickness="2.75" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="17" Height="17" Stretch="Uniform"
+                                  Data="{StaticResource IconGear}" />
+                        </Button>
+
+                    </StackPanel>
                 </Grid>
             </Border>
 

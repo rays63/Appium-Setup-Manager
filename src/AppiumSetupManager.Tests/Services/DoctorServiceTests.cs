@@ -41,11 +41,12 @@ public class DoctorServiceTests
         return p;
     }
 
-    private static DoctorService CreateService(ICommandRunner? runner = null, IPlatformAdapter? platform = null)
+    private static DoctorService CreateService(ICommandRunner? runner = null, IPlatformAdapter? platform = null, IHistoryService? history = null)
     {
         runner ??= CreateDefaultRunner();
         platform ??= MacPlatform();
-        return new DoctorService(runner, platform);
+        history ??= Substitute.For<IHistoryService>();
+        return new DoctorService(runner, platform, history);
     }
 
     private static ICommandRunner CreateDefaultRunner()
